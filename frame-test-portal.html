@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Host page: Swagger UI в iframe</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; color: #222; background: #e9edf2; }
+    header { display: flex; align-items: center; gap: 16px; padding: 12px 24px; background: #2b3a55; color: #fff; }
+    header .logo { font-weight: 700; font-size: 18px; }
+    header nav a { color: #cfd8e6; margin-right: 16px; text-decoration: none; font-size: 14px; }
+    .layout { display: grid; grid-template-columns: 240px 1fr; gap: 24px; padding: 24px; }
+    aside { background: #fff; border-radius: 8px; padding: 16px; align-self: start; }
+    aside h3 { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; color: #666; }
+    aside button { display: block; width: 100%; margin: 4px 0; padding: 8px; text-align: left;
+                   border: 1px solid #ccd; border-radius: 4px; background: #f7f9fc; cursor: pointer; }
+    aside button.active { background: #2b3a55; color: #fff; border-color: #2b3a55; }
+    aside label { display: block; margin-top: 12px; font-size: 14px; }
+    main h1 { margin: 0 0 4px; font-size: 22px; }
+    main p { margin: 0 0 16px; color: #555; }
+    .frame-box { border: 3px dashed #e07a00; border-radius: 8px; background: #fff; overflow: hidden; }
+    .frame-label { display: flex; justify-content: space-between; padding: 6px 12px; background: #fff3e0;
+                   color: #8a4b00; font: 12px/1.4 monospace; border-bottom: 1px solid #f0c890; }
+    iframe { display: block; width: 100%; height: calc(100vh - 230px); min-height: 400px; border: 0; }
+    footer { padding: 12px 24px; color: #777; font-size: 13px; }
+    @media (max-width: 720px) { .layout { grid-template-columns: 1fr; padding: 16px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="logo">Host Portal</span>
+    <nav><a href="#">Главная</a><a href="#">Сервисы</a><a href="#">API</a></nav>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <h3>Спецификация</h3>
+      <div id="specs"></div>
+      <label><input type="checkbox" id="topbar"> Показать topbar Swagger UI</label>
+    </aside>
+
+    <main>
+      <h1>Документация API</h1>
+      <p>Это страница-хост. Ниже, в оранжевой рамке, — <code>&lt;iframe&gt;</code> со страницей <code>api-docs/</code>.
+         Кнопки слева меняют <code>src</code> фрейма.</p>
+      <div class="frame-box">
+        <div class="frame-label"><span>&lt;iframe&gt;</span><span id="src"></span></div>
+        <iframe id="docs" title="API documentation"></iframe>
+      </div>
+    </main>
+  </div>
+
+  <footer>Host Portal · тестовая страница для проверки встраивания Swagger UI</footer>
+
+  <script>
+    var specs = ["gh-pages-swagger-ui-experiment", "Petstore (Swagger 2.0)", "Petstore (OpenAPI 3)"];
+    var current = specs[2];
+    var frame = document.getElementById("docs");
+    var topbar = document.getElementById("topbar");
+    var box = document.getElementById("specs");
+
+    function render() {
+      var src = "api-docs/?spec=" + encodeURIComponent(current) + (topbar.checked ? "" : "&topbar=0");
+      frame.src = src;
+      document.getElementById("src").textContent = "src=\"" + src + "\"";
+      [].forEach.call(box.children, function (b) { b.classList.toggle("active", b.textContent === current); });
+    }
+
+    specs.forEach(function (name) {
+      var b = document.createElement("button");
+      b.textContent = name;
+      b.onclick = function () { current = name; render(); };
+      box.appendChild(b);
+    });
+    topbar.onchange = render;
+    render();
+  </script>
+</body>
+</html>
