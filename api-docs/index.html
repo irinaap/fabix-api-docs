@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API documentation</title>
+  <link rel="stylesheet" href="swagger-ui.css">
+  <link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32">
+  <link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16">
+  <style>
+    html { box-sizing: border-box; overflow-y: scroll; }
+    *, *::before, *::after { box-sizing: inherit; }
+    body { margin: 0; background: #fafafa; }
+    /* Hide the Swagger logo/link in the top bar, keep the spec selector */
+    .swagger-ui .topbar .link { display: none; }
+    .swagger-ui .topbar .download-url-wrapper { justify-content: flex-end; }
+    body.no-topbar .swagger-ui .topbar { display: none; }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+
+  <script src="swagger-ui.bundle.js"></script>
+  <script src="config.js"></script>
+  <script>
+    // Page parameters (convenient for <iframe src="...">):
+    //   ?spec=<name>  - spec from config.js to open first
+    //   ?topbar=0     - hide the top bar with the spec selector
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var specs = window.SWAGGER_SPECS || [];
+      var primary = params.get("spec");
+      var showTopbar = params.get("topbar") !== "0" && specs.length > 1;
+      if (!showTopbar) document.body.classList.add("no-topbar");
+
+      var single = specs.length === 1 || (!showTopbar && primary);
+      var selected = specs.filter(function (s) { return s.name === primary; })[0] || specs[0];
+
+      window.ui = SwaggerUIBundle({
+        dom_id: "#swagger-ui",
+        url: single ? selected.url : undefined,
+        urls: single ? undefined : specs,
+        "urls.primaryName": primary || undefined,
+        presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+        plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+        layout: "StandaloneLayout",
+        validatorUrl: null,       // no online validator
+        queryConfigEnabled: false, // do not accept ?url=... from the query string
+        deepLinking: false,       // do not rewrite the location hash inside the frame
+        oauth2RedirectUrl: new URL("oauth2-redirect.html", location.href).href
+      });
+    })();
+  </script>
+</body>
+</html>
