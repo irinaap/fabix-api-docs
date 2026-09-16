@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8">
     <title>API Документация</title>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com" />
+    <!-- Заменено на надежный cdnjs -->
+    <link rel="stylesheet" type="text/css" href="https://cloudflare.com" />
     <style>
       html { box-sizing: border-box; overflow-y: scroll; }
       *, *:before, *:after { box-sizing: inherit; }
@@ -14,12 +15,12 @@
   <body>
     <div id="swagger-ui"></div>
 
-    <script src="https://unpkg.com" charset="UTF-8"></script>
-    <script src="https://unpkg.com" charset="UTF-8"></script>
+    <!-- Заменено на надежный cdnjs -->
+    <script src="https://cloudflare.com" charset="UTF-8"></script>
+    <script src="https://cloudflare.com" charset="UTF-8"></script>
     <script>
       window.onload = function() {
         const ui = SwaggerUIBundle({
-          // Указываем путь к вашему YAML-файлу в этом же репозитории
           url: "./openapi.yaml", 
           dom_id: '#swagger-ui',
           deepLinking: true,
