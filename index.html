@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8">
     <title>API Документация</title>
-    <!-- Заменено на надежный cdnjs -->
-    <link rel="stylesheet" type="text/css" href="https://cloudflare.com" />
+    <!-- Используем гарантированно доступный Яндекс CDN -->
+    <link rel="stylesheet" type="text/css" href="https://yastatic.net" />
     <style>
       html { box-sizing: border-box; overflow-y: scroll; }
       *, *:before, *:after { box-sizing: inherit; }
@@ -15,9 +15,9 @@
   <body>
     <div id="swagger-ui"></div>
 
-    <!-- Заменено на надежный cdnjs -->
-    <script src="https://cloudflare.com" charset="UTF-8"></script>
-    <script src="https://cloudflare.com" charset="UTF-8"></script>
+    <!-- Подключаем скрипты с Яндекс CDN -->
+    <script src="https://yastatic.net" charset="UTF-8"></script>
+    <script src="https://yastatic.net" charset="UTF-8"></script>
     <script>
       window.onload = function() {
         const ui = SwaggerUIBundle({
@@ -27,9 +27,6 @@
           presets: [
             SwaggerUIBundle.presets.apis,
             SwaggerUIStandalonePreset
-          ],
-          plugins: [
-            SwaggerUIBundle.plugins.DownloadUrl
           ],
           layout: "BaseLayout"
         });
