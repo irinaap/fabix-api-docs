@@ -1,0 +1,106 @@
+post:
+  summary: Факт перемещения между складом и производством
+  description: Отправляет в ИС Заказчика информацию о перемещениях склад-производство, производство-склад
+  tags:
+    - Отчеты
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - movement
+          properties:
+            movement:
+              type: object
+              required:
+                - id
+                - number
+                - date
+                - employee
+                - source
+                - recipient
+                - stockUnits
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  description: Идентификатор документа перемещения
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                number:
+                  type: string
+                  description: № документа перемещения
+                  example: "MOV-2023-001"
+                date:
+                  type: string
+                  format: date-time
+                  description: Дата-время
+                  example: "2023-10-15T14:30:00Z"
+                employee:
+                  type: string
+                  description: Ответственный. Фамилия + инициал имени
+                  example: "Иванов И"
+                source:
+                  type: string
+                  enum:
+                    - WAREHOUSE
+                    - MANUFACTURE
+                  description: Источник перемещения
+                  example: "WAREHOUSE"
+                recipient:
+                  type: string
+                  enum:
+                    - WAREHOUSE
+                    - MANUFACTURE
+                  description: Получатель перемещения
+                  example: "MANUFACTURE"
+                stockUnits:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required:
+                      - productId
+                      - productName
+                      - count
+                      - status
+                    properties:
+                      batchId:
+                        type: string
+                        format: uuid
+                        nullable: true
+                        description: Идентификатор партии
+                        example: "98765432-1234-5678-9123-456789012345"
+                      batchNumber:
+                        type: string
+                        nullable: true
+                        description: Номер партии
+                        example: "С-0000004"
+                      productId:
+                        type: string
+                        format: uuid
+                        description: Идентификатор номенклатуры
+                        example: "550e8400-e29b-41d4-a716-446655440000"
+                      productName:
+                        type: string
+                        description: Наименование номенклатуры
+                        example: "Морковь"
+                      count:
+                        type: string
+                        description: Количество
+                        example: "123.456"
+                      status:
+                        type: string
+                        enum:
+                          - SPOILAGE
+                          - NORM
+                        description: Состояние
+                        example: "NORM"
+  responses:
+    '200':
+      description: Успешная обработка перемещения
+      content:
+        application/json:
+          schema:
+            $ref: '../components/standartResponce.yaml'
