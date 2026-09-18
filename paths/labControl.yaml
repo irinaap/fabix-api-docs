@@ -1,111 +1,116 @@
-post:
-  summary: Отправка задания на лабораторный контроль
-  description: |
-    Отправляет в ИС Заказчика задание на лабораторный контроль  
-    # Заголовок первого уровня (H1)
+pathItem:
+  post:
+    summary: Отправка задания на лабораторный контроль
+    description: |
+      Отправляет в ИС Заказчика задание на лабораторный контроль  
+      # Заголовок первого уровня (H1)
 
-    Это пример абзаца обычного текста в Markdown. Текст может быть **жирным** для выделения важных мыслей или *курсивным*, если нужно подчеркнуть слово. Если вы допустили ошибку, текст можно ~~зачеркнуть~~.
+      Это пример абзаца обычного текста в Markdown. Текст может быть **жирным** для выделения важных мыслей или *курсивным*, если нужно подчеркнуть слово. Если вы допустили ошибку, текст можно ~~зачеркнуть~~.
 
-    ## Подзаголовок второго уровня (H2)
+      ## Подзаголовок второго уровня (H2)
 
-    Здесь мы рассмотрим использование различных видов списков и цитат.
+      Здесь мы рассмотрим использование различных видов списков и цитат.
 
-    ### Списки и цитаты (H3)
+      ### Списки и цитаты (H3)
 
-    * **Маркированный список:**
-    * Элемент первого уровня
-    * Еще один элемент
-       * Вложенный элемент второго уровня
-    * **Простой формат:** Каждый пункт логически продолжает общую тему.
+      * **Маркированный список:**
+      * Элемент первого уровня
+      * Еще один элемент
+         * Вложенный элемент второго уровня
+      * **Простой формат:** Каждый пункт логически продолжает общую тему.
 
-    1. **Нумерованный список:** Используется для последовательных шагов.
-    2. **Второй шаг:** Порядок имеет значение.
-    3. **Третий шаг:** Завершение процесса.
+      1. **Нумерованный список:** Используется для последовательных шагов.
+      2. **Второй шаг:** Порядок имеет значение.
+      3. **Третий шаг:** Завершение процесса.
 
-    > **Важное примечание:** Маркдаун позволяет форматировать текст прямо во время написания, не отвлекаясь на сложные графические редакторы.
+      > **Важное примечание:** Маркдаун позволяет форматировать текст прямо во время написания, не отвлекаясь на сложные графические редакторы.
 
-    ---
+      ---
 
-    ### Ссылки и код (H3)
+      ### Ссылки и код (H3)
 
-    Вы можете вставлять [полезные ссылки](https://example.com) или выделять `короткие команды` прямо внутри строки текста.
-  tags:
-    - Лабораторный контроль
-  requestBody:
-    required: true
-    content:
-      application/json:
-        schema:
-          type: object
-          required:
-            - labControl
-          properties:
-            labControl:
-              type: object
-              required:
-                - id
-                - number
-                - reportId
-                - controlDate
-                - batchNumber
-                - batchId
-                - productId
-                - productName
-                - count
-                - workCenter
-              properties:
-                id:
-                  type: string
-                  format: uuid
-                  description: Идентификатор задания
-                  example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-                number:
-                  type: string
-                  description: Номер документа
-                  example: "Л-20240116-015"
-                reportId:
-                  type: string
-                  format: uuid
-                  description: Идентификатор отчета о выпуске
-                  example: "b2c3d4e5-f6a7-8901-bcde-f23456789012"
-                isPlan:
-                  type: boolean
-                  description: Плановый/внеплановый
-                  example: true
-                controlDate:
-                  type: string
-                  format: date-time
-                  description: Дата-время
-                  example: "2023-12-15T14:30:00+03:00"
-                batchNumber:
-                  type: string
-                  description: Номер партии
-                  example: "ПФ-2301015-8766-009"
-                batchId:
-                  type: string
-                  format: uuid
-                  description: Идентификатор партии
-                  example: "c3d4e5f6-a7b8-9012-cdef-345678901234"
-                productId:
-                  type: string
-                  format: uuid
-                  description: Идентификатор номенклатуры
-                  example: "d4e5f6a7-b8c9-0123-defg-456789012345"
-                productName:
-                  type: string
-                  description: Наименование номенклатуры
-                  example: "Бисквит Медовик рамка (4)"
-                count:
-                  type: number
-                  format: float
-                  description: Количество
-                  example: 123.567
-                workCenter:
-                  $ref: '../components/workCenter.yaml'
-  responses:
-    '200':
-      description: Успешная обработка задания
+      Вы можете вставлять [полезные ссылки](https://example.com) или выделять `короткие команды` прямо внутри строки текста.
+    tags:
+      - Лабораторный контроль
+    requestBody:
+      required: true
       content:
         application/json:
           schema:
-            $ref: '../components/standartResponce.yaml'
+            type: object
+            required:
+              - labControl
+            properties:
+              labControl:
+                $ref: '#/components/schemas/labControl'
+    responses:
+      '200':
+        description: Успешная обработка задания
+        content:
+          application/json:
+            schema:
+              $ref: '../components/standartResponce.yaml'
+components:
+  schemas:
+    labControl:
+      type: object
+      required:
+        - id
+        - number
+        - reportId
+        - controlDate
+        - batchNumber
+        - batchId
+        - productId
+        - productName
+        - count
+        - workCenter
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор задания
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        number:
+          type: string
+          description: Номер документа
+          example: "Л-20240116-015"
+        reportId:
+          type: string
+          format: uuid
+          description: Идентификатор отчета о выпуске
+          example: "b2c3d4e5-f6a7-8901-bcde-f23456789012"
+        isPlan:
+          type: boolean
+          description: Плановый/внеплановый
+          example: true
+        controlDate:
+          type: string
+          format: date-time
+          description: Дата-время
+          example: "2023-12-15T14:30:00+03:00"
+        batchNumber:
+          type: string
+          description: Номер партии
+          example: "ПФ-2301015-8766-009"
+        batchId:
+          type: string
+          format: uuid
+          description: Идентификатор партии
+          example: "c3d4e5f6-a7b8-9012-cdef-345678901234"
+        productId:
+          type: string
+          format: uuid
+          description: Идентификатор номенклатуры
+          example: "d4e5f6a7-b8c9-0123-defg-456789012345"
+        productName:
+          type: string
+          description: Наименование номенклатуры
+          example: "Бисквит Медовик рамка (4)"
+        count:
+          type: number
+          format: float
+          description: Количество
+          example: 123.567
+        workCenter:
+          $ref: '../components/workCenter.yaml'
