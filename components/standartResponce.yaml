@@ -1,0 +1,20 @@
+type: object
+required:
+  - id
+  - success
+properties:
+  id:
+    type: string
+    format: uuid
+    description: Идентификатор сущности в запросе
+    example: "e5f6a7b8-c9d0-1234-efgh-567890123456"
+  success:
+    type: boolean
+    description: Флаг успешности обработки
+    example: true
+  error:
+    type: array
+    nullable: true
+    items:
+      $ref: './error.yaml'
+    description: Список ошибок (если есть)

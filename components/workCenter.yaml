@@ -1,0 +1,14 @@
+type: object
+required:
+  - id
+  - name
+properties:
+  id:
+    type: string
+    format: uuid
+    description: Идентификатор рабочего центра
+    example: "e5f6a7b8-c9d0-1234-efgh-567890123456"
+  name:
+    type: string
+    description: Наименование рабочего центра
+    example: "Цех готовой продукции №3"

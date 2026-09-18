@@ -1,0 +1,13 @@
+type: object
+required:
+  - code
+  - description
+properties:
+  code:
+    type: string
+    description: Код ошибки
+    example: "054"
+  description:
+    type: string
+    description: Описание ошибки
+    example: "Описание ошибки"
