@@ -1,0 +1,18 @@
+type: object
+required:
+  - code
+  - description
+properties:
+  code:
+    type: string
+    description: Код ошибки
+    example: "054"
+  description:
+    type: string
+    description: Описание ошибки
+    example: "Описание ошибки"
+  recordId:
+    type: string
+    description: Идентификатор записи в запросе, вызвавшей ошибку
+    example: "123e4567-e89b-12d3-a456-426614174000"
+    
