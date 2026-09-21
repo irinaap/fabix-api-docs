@@ -1,0 +1,105 @@
+pathItem:
+  post:
+    summary: Отправка плана выпуска ГП
+    x-use:
+      - Оренбург
+      - Магнит
+      - НамНям
+    x-source: "ISF"
+    x-recipient: "ИС Заказчика"
+    x-errors:
+      - 101: нет партии
+      - 102: нет номенклатуры
+    description: Отправляет в ИС Заказчика результаты планирования
+    tags:
+      - Планирование
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - plan
+            properties:
+              plan:
+                $ref: '#/components/schemas/plan'
+    responses:
+      '200':
+        description: Результат обработки задания (успешный или неуспешный)
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '../components/okResponse.yaml'
+                - $ref: '../components/errorResponse.yaml'         
+components:
+  schemas:
+    plan:
+      type: object
+      required:
+        - id
+        - number
+        - orders
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор плана (обработки заказа)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        number:
+          type: string
+          description: Номер плана (обработки заказа)
+          example: "ОЗ-20260315-001"
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/order'
+          minItems: 1
+    order:
+      type: object
+      required:
+        - id
+        - items
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор заказа
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/orderItem'
+          minItems: 1
+    orderItem:
+      type: object
+      required:
+        - id
+        - batchNumber
+        - productId
+        - productName
+        - count
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор партии ГП
+          example: "223e4567-e89b-12d3-a456-426614174001"
+        batchNumber:
+          type: string
+          description: Номер партии
+          example: "ГП-20260212-008"
+        productId:
+          type: string
+          format: uuid
+          description: Идентификатор номенклатуры ГП
+          example: "333e4567-e89b-12d3-a456-426614174002"
+        productName:
+          type: string
+          description: Наименование номенклатуры ГП
+          example: "Торт Ягодный рай праздничный"
+        count:
+          type: string
+          description: Количество в формате с плавающей точкой
+          example: "150.750"
