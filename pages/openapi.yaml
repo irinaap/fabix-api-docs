@@ -1,21 +1,24 @@
 openapi: 3.0.0
 info:
-  version: 2.0.0
-  title: Потоки интеграции ISF-> клиент  222
-  description: Исходящие потоки интеграции 222
+  version: 3.0.0
+  title: Потоки интеграции ISF-> клиент  333
+  description: Исходящие потоки интеграции 333
 paths:
+  /api/rawNomenclature:
+    $ref: './paths/rawNomenclature.yaml#/pathItem'
   /api/labControl:
     $ref: './paths/labControl.yaml#/pathItem'
   /api/planningResult:
     $ref: './paths/planningResult.yaml#/pathItem'
   /api/movement:
     $ref: './paths/movement.yaml#/pathItem'
+  
 components:
   schemas:
     error:
       $ref: './components/error.yaml'
-    standartResponce:
-      $ref: './components/standartResponce.yaml'
+    okResponse:
+      $ref: './components/okResponse.yaml'
     workCenter:
       $ref: './components/workCenter.yaml'
     labControl:
@@ -24,3 +27,7 @@ components:
       $ref: './paths/planningResult.yaml#/components/schemas/plan'
     movement:
       $ref: './paths/movement.yaml#/components/schemas/movement'
+    product:
+      $ref: './paths/rawNomenclature.yaml#/components/schemas/product'
+    category:
+      $ref: './paths/rawNomenclature.yaml#/components/schemas/category'

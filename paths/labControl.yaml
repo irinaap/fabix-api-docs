@@ -56,7 +56,7 @@ pathItem:
             schema:
               oneOf:
                 - $ref: '../components/okResponse.yaml'
-                - $ref: '../components/errorResponse.yaml'                              
+                - $ref: '../components/errorResponse.yaml'                       
 components:
   schemas:
     labControl:
