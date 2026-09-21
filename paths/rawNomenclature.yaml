@@ -1,13 +1,13 @@
 pathItem:
   post:
-    summary: Отправка номенклатуры сырья и материалов
+    summary: Отправка номенклатуры сырья и материалов (мастер по номенклатуре - Fabix)
     x-use:
       - Магнит
       - Рязань
     x-source: "ISF"
     x-recipient: "ИС Заказчика"
     description: |
-      Отправляет в ИС Заказчика задание на лабораторный контроль  
+      Отправляет в ИС Заказчика номенклаттуру сырья
       # Заголовок первого уровня (H1)
 
       Это пример абзаца обычного текста в Markdown. Текст может быть **жирным** для выделения важных мыслей или *курсивным*, если нужно подчеркнуть слово. Если вы допустили ошибку, текст можно ~~зачеркнуть~~.
@@ -50,74 +50,148 @@ pathItem:
                 $ref: '#/components/schemas/rawNomenclature'
     responses:
       '200':
-        description: Успешная обработка задания
+        description: Результат обработки (успешный или неуспешный)
         content:
           application/json:
             schema:
-              $ref: '../components/standartResponse.yaml'
+              oneOf:
+                - $ref: '../components/okResponse.yaml'
+                - $ref: '../components/errorResponse.yaml'         
 components:
   schemas:
-    labControl:
+    RawNomenclatureRequest:
       type: object
+      description: Тело запроса на отправку номенклатуры сырья.
+      required:
+        - product
+      properties:
+        product:
+          $ref: "#/components/schemas/product"
+
+    product:
+      type: object
+      description: Номенклатура сырья.
       required:
         - id
-        - number
-        - reportId
-        - controlDate
-        - batchNumber
-        - batchId
-        - productId
-        - productName
-        - count
-        - workCenter
+        - article
+        - name
+        - unit
+        - isMercury
+        - isInActive
+        - origin
+        - expireControl
       properties:
         id:
           type: string
           format: uuid
-          description: Идентификатор задания
-          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-          # Источник: Отбор в лабораторию ->ID отбора
-        number:
+          description: Идентификатор номенклатуры.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          # Источник — сущность: Номенклатура сырья, общая часть карточки.
+          # Источник — атрибут: поле guid записи номенклатуры.
+        article:
           type: string
-          description: Номер документа
-          example: "Л-20240116-015"
-          # Источник: Отбор в лабораторию ->№ отбора
-        reportId:
+          description: Артикул.
+          example: СЫР-000123
+          # Источник — сущность: Номенклатура сырья, общая часть карточки.
+          # Источник — атрибут: Артикул.
+        name:
           type: string
-          format: uuid
-          description: Идентификатор отчета о выпуске
-          example: "b2c3d4e5-f6a7-8901-bcde-f23456789012"
-        isPlan:
+          description: Наименование.
+          example: Мука пшеничная высшего сорта
+          # Источник — сущность: Номенклатура сырья, общая часть карточки.
+          # Источник — атрибут: Наименование.
+        unit:
+          type: string
+          description: |
+            Единица измерения. Производственная единица измерения, значение из перечисления
+            «Производственные единицы измерения», переведённое в значение из ОКЕИ
+            (Общероссийский классификатор единиц измерения):
+            - `KGM` — килограмм
+            - `PCE` — штука
+            - `LTR` — литр
+            - `MTR` — метр
+            - `GRM` — грамм
+          enum:
+            - KGM
+            - PCE
+            - LTR
+            - MTR
+            - GRM
+          example: KGM
+          # Источник — сущность: Номенклатура сырья, общая часть карточки.
+        isMercury:
           type: boolean
-          description: Плановый/внеплановый
+          description: "`true`, если продукция подотчётна Меркурию."
+          example: false
+          # Источник — сущность: Номенклатура сырья, общая часть карточки.
+          # Источник — атрибут: Подотчётная Меркурию продукция.
+        isInActive: 
+          type: boolean
+          description: |
+            Признак архивации.
+            - При отправке сообщения по кнопке «Утвердить» — `isInActive = false`.
+            - При отправке сообщения по кнопке «В архив» — `isInActive = true`.
+            - При отправке сообщения после приёма номенклатуры СиМ — значение, установленное при приёме.
+          example: false
+        category:
+          $ref: "#/components/schemas/category"
+        origin:
+          type: string
+          description: Происхождение.
+          enum:
+            - Растительное
+            - Животное
+            - Комбинированное
+            - Другое
+          example: Растительное
+          # Источник — сущность: Номенклатура сырья, общая часть карточки.
+          # Источник — атрибут: Происхождение.
+        expireControl:
+          type: boolean
+          description: Контролировать срок годности.
           example: true
-        controlDate:
+          # Источник — сущность: Номенклатура сырья, общая часть карточки.
+          # Источник — атрибут: Контролировать срок годности.
+        dateIns:
           type: string
           format: date-time
-          description: Дата-время
-          example: "2023-12-15T14:30:00+03:00"
-        batchNumber:
+          description: Дата создания записи. Строка в текстовом формате RFC 3339.
+          example: "2026-09-01T09:15:30+03:00"
+          # Источник — сущность: Лог изменений номенклатуры сырья.
+          # Источник — атрибут: Дата создания записи.
+        dateUpd:
           type: string
-          description: Номер партии
-          example: "ПФ-2301015-8766-009"
-        batchId:
+          format: date-time
+          description: |
+            Дата последнего изменения, инициировавшего обмен.
+            Строка в текстовом формате RFC 3339.
+          example: "2026-09-08T15:37:12+03:00"
+          # Источник — сущность: Лог изменений номенклатуры сырья.
+        dateDel:
+          type: string
+          format: date-time
+          description: Дата удаления записи. Строка в текстовом формате RFC 3339.
+          example: "2026-09-21T10:05:00+03:00"
+          # Источник — сущность: Лог изменений номенклатуры сырья.
+          # Источник — атрибут: Дата удаления записи.
+
+    category:
+      type: object
+      description: |
+        Категория. Необязательный объект; если он передан, то `id` и `name` обязательны.
+      # Источник — сущность: Номенклатура сырья, общая часть карточки.
+      required:
+        - id
+        - name
+      properties:
+        id:
           type: string
           format: uuid
-          description: Идентификатор партии
-          example: "c3d4e5f6-a7b8-9012-cdef-345678901234"
-        productId:
+          description: Идентификатор категории.
+          example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+          # Источник — идентификатор справочника «Категории сырья».
+        name:
           type: string
-          format: uuid
-          description: Идентификатор номенклатуры
-          example: "d4e5f6a7-b8c9-0123-defg-456789012345"
-        productName:
-          type: string
-          description: Наименование номенклатуры
-          example: "Бисквит Медовик рамка (4)"
-        count:
-          type: number
-          format: float
-          description: Количество
-          example: 123.567
-        workCenter:
-          $ref: '../components/workCenter.yaml'
+          description: Наименование категории.
+          example: Мука и крупы
+          # Источник — наименование справочника «Категории сырья».
