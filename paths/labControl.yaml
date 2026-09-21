@@ -76,10 +76,12 @@ components:
           format: uuid
           description: Идентификатор задания
           example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          # Источник: Отбор в лабораторию ->ID отбора
         number:
           type: string
           description: Номер документа
           example: "Л-20240116-015"
+          # Источник: Отбор в лабораторию ->№ отбора
         reportId:
           type: string
           format: uuid
