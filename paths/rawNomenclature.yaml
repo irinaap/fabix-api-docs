@@ -47,7 +47,7 @@ pathItem:
               - rawNomenclature
             properties:
               rawNomenclature:
-                $ref: '#/components/schemas/rawNomenclature'
+                $ref: '#/components/schemas/RawNomenclatureRequest'
     responses:
       '200':
         description: Результат обработки (успешный или неуспешный)
