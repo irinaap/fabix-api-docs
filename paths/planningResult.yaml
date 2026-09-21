@@ -26,11 +26,13 @@ pathItem:
                 $ref: '#/components/schemas/plan'
     responses:
       '200':
-        description: Успешная обработка плана
+        description: Результат обработки задания (успешный или неуспешный)
         content:
           application/json:
             schema:
-              $ref: '../components/standartResponce.yaml'
+              oneOf:
+                - $ref: '../components/okResponse.yaml'
+                - $ref: '../components/errorResponse.yaml'         
 components:
   schemas:
     plan:
