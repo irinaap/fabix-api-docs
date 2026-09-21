@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  version: 1.0.0
-  title: Потоки интеграции ISF-> клиент
-  description: Исходящие потоки интеграции
+  version: 2.0.0
+  title: Потоки интеграции ISF-> клиент  222
+  description: Исходящие потоки интеграции 222
 paths:
   /api/labControl:
     $ref: './paths/labControl.yaml#/pathItem'
