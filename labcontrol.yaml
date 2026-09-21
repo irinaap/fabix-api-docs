@@ -1,0 +1,18 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Потоки интеграции ISF-> клиент. Лабораторный контроль.
+  description: Исходящие потоки интеграции. Большое описание тут
+paths:
+  /api/labControl:
+    $ref: './paths/labControl.yaml#/pathItem'
+components:
+  schemas:
+    error:
+      $ref: './components/error.yaml'
+    standartResponce:
+      $ref: './components/standartResponce.yaml'
+    workCenter:
+      $ref: './components/workCenter.yaml'
+    labControl:
+      $ref: './paths/labControl.yaml#/components/schemas/labControl'
