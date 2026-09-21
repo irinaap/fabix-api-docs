@@ -1,0 +1,18 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Потоки интеграции ISF-> клиент. План выпуска ГП.
+  description: Исходящие потоки интеграции. Тут большое описание
+paths:
+  /api/planningResult:
+    $ref: './paths/planningResult.yaml#/pathItem'
+components:
+  schemas:
+    error:
+      $ref: './components/error.yaml'
+    standartResponce:
+      $ref: './components/standartResponce.yaml'
+    workCenter:
+      $ref: './components/workCenter.yaml'
+    plan:
+      $ref: './paths/planningResult.yaml#/components/schemas/plan'
