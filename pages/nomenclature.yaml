@@ -5,14 +5,14 @@ info:
   description: Исходящие потоки интеграции 333
 paths:
   /api/rawNomenclature:
-    $ref: './paths/rawNomenclature.yaml#/pathItem'
+    $ref: '../paths/rawNomenclature.yaml#/pathItem'
 components:
   schemas:
     error:
-      $ref: './components/error.yaml'
+      $ref: '../components/error.yaml'
     okResponse:
-      $ref: './components/okResponse.yaml'
+      $ref: '../components/okResponse.yaml'
     product:
-      $ref: './paths/rawNomenclature.yaml#/components/schemas/product'
+      $ref: '../paths/rawNomenclature.yaml#/components/schemas/product'
     category:
-      $ref: './paths/rawNomenclature.yaml#/components/schemas/category'
+      $ref: '../paths/rawNomenclature.yaml#/components/schemas/category'
