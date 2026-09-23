@@ -8,6 +8,8 @@ info:
 paths:
   /api/rawNomenclature:
     $ref: '../paths/rawNomenclature.yaml#/pathItem'
+  /api/productNomenclature:
+    $ref: '../paths/productNomenclature.yaml#/pathItem'
 components:
   schemas:
     error:
@@ -18,3 +20,6 @@ components:
       $ref: '../paths/rawNomenclature.yaml#/components/schemas/product'
     category:
       $ref: '../paths/rawNomenclature.yaml#/components/schemas/category'
+    productNomenclature:
+      $ref: '../paths/productNomenclature.yaml#/components/schemas/productNomenclature'
+
