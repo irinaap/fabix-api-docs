@@ -1,8 +1,10 @@
 openapi: 3.0.0
 info:
   version: 3.0.0
-  title: Потоки интеграции ISF-> клиент  333
-  description: Исходящие потоки интеграции 333
+  title: НСИ. Номенклатура
+  description: |
+    Мастер-системой по номенклатуре может быть Fabix или внешняя учетная система. 
+    Подключение потоков зависит от потребностей производства и детализации учёта.
 paths:
   /api/rawNomenclature:
     $ref: '../paths/rawNomenclature.yaml#/pathItem'
