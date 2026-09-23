@@ -10,6 +10,8 @@ paths:
     $ref: '../paths/rawNomenclature.yaml#/pathItem'
   /api/productNomenclature:
     $ref: '../paths/productNomenclature.yaml#/pathItem'
+  /api/nomenclature:
+    $ref: '../paths/nomenclature.yaml#/pathItem'
 components:
   schemas:
     error:
@@ -22,4 +24,6 @@ components:
       $ref: '../paths/rawNomenclature.yaml#/components/schemas/category'
     productNomenclature:
       $ref: '../paths/productNomenclature.yaml#/components/schemas/productNomenclature'
+    nomenclature:
+      $ref: '../paths/nomenclature.yaml#/components/schemas/nomenclature'
 
