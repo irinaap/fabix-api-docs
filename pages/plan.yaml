@@ -5,14 +5,14 @@ info:
   description: Исходящие потоки интеграции. Тут большое описание
 paths:
   /api/planningResult:
-    $ref: './paths/planningResult.yaml#/pathItem'
+    $ref: '../paths/planningResult.yaml#/pathItem'
 components:
   schemas:
     error:
-      $ref: './components/error.yaml'
+      $ref: '../components/error.yaml'
     standartResponce:
-      $ref: './components/standartResponce.yaml'
+      $ref: '../components/okResponse.yaml'
     workCenter:
-      $ref: './components/workCenter.yaml'
+      $ref: '../components/workCenter.yaml'
     plan:
-      $ref: './paths/planningResult.yaml#/components/schemas/plan'
+      $ref: '../paths/planningResult.yaml#/components/schemas/plan'
