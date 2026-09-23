@@ -10,8 +10,8 @@ components:
   schemas:
     error:
       $ref: '../components/error.yaml'
-    standartResponce:
-      $ref: '../components/standartResponce.yaml'
+    okResponse:
+      $ref: '../components/okResponse.yaml'
     workCenter:
       $ref: '../components/workCenter.yaml'
     labControl:
