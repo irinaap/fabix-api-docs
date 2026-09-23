@@ -1,0 +1,594 @@
+pathItem:
+  post:
+    summary: Приём номенклатуры сырья, ПФ и ГП (мастер по номенклатуре - ИС Заказчика)
+    x-source: "ИС Заказчика (ERP)"
+    x-recipient: "АРМ Офис"
+    description: |
+      Номенклатура создаётся и редактируется на стороне ERP и отправляется в АРМ Офис.
+      АРМ Офис принимает и сохраняет полученные данные номенклатуры.
+
+      Номенклатура сырья, материалов и ПФ-ГП имеют **одинаковый формат запроса и единую конечную точку**.
+      Сценарий приёма определяется параметром `product.type`:
+
+      | `product.type`   | Номенклатура | Обязательная спецификация   | Поток включен, если настройка конфигурации |
+      |------------------|--------------|-----------------------------|--------------------------------------------|
+      | `RAW_MATERIAL`   | Сырьё        | `rawMaterialSpecification`  | Мастер-система по производственной номенклатуре СиМ = Внешняя система |
+      | `SEMIFINISHED`   | ПФ           | `semifinishedSpecification` | Мастер-система по номенклатуре ПФ-ГП = Внешняя система |
+      | `OUTPUT_PRODUCT` | ГП           | `productSpecification`      | Мастер-система по номенклатуре ПФ-ГП = Внешняя система |
+
+      Значение `MATERIAL` (материалы) упоминается в постановке, но сценарии его приёма в данном описании не рассматриваются.
+
+      ---
+      Endpoint указан в настройке Номенклатура -> Номенклатура, определён в системе как `[url АРМ Офис]/api/integrations/nomenclature`.
+
+      ### Сценарии приёма
+      | `isInactive` | Запись с `product.id` в АРМ Офис | Сценарий |
+      |--------------|----------------------------------|----------|
+      | `false`      | отсутствует                      | Создание новой номенклатуры (для ПФ/ГП дополнительно создаётся черновик техкарты) |
+      | `false`      | существует                       | Обновление данных номенклатуры |
+      | `true`       | существует                       | Сырьё — перевод в архив; ПФ/ГП — удаление, а если удаление невозможно — перевод в архив |
+      | `true`       | отсутствует                      | Ошибка `001` |
+
+      `parent` обрабатывается как справочник: при отсутствии записи с `parent.id` она добавляется, при расхождении наименования — обновляется.
+      Справочник зависит от типа: сырьё — «Категория сырья»; ПФ (`isPacked = false`) — «Группы ПФ»; ПФ (`isPacked = true`) и ГП — «Группа продуктов».
+
+      ### Коды ошибок
+      Все бизнес-ошибки возвращаются с HTTP 200 и `success = false`.
+
+      | Код | Описание | Тип |
+      |-----|----------|-----|
+      | 001 | Отсутствует производственная номенклатура с указанным идентификатором | все |
+      | 020 | Архивация номенклатуры невозможна | все |
+      | 040 | Изменение производственной единицы измерения номенклатуры невозможно | все |
+      | 041 | Изменение артикула номенклатуры невозможно | все |
+      | 042 | Изменение признака ОПР невозможно | сырьё |
+      | 044 | Смена типа номенклатуры невозможна | ПФ, ГП |
+      | 045 | Не указан квант отбора на лабораторные исследования | ПФ, ГП |
+      | 047 | Продукция не может быть подотчётна ФГИС Меркурий | сырьё |
+      | 048 | Изменение веса в единице измерения невозможно | все |
+      | 050 | Изменение наименования разруба невозможно | ПФ |
+      | 051 | Не указан вес 1 штуки | ПФ, ГП |
+      | 052 | Неверная единица измерения веса 1 штуки | ПФ, ГП |
+      | 054 | Невозможно использовать неуникальный идентификатор номенклатуры | все |
+      | 055 | Недопустимая комбинация КБЖУ и происхождения | сырьё |
+      | 057 | Не указан приоритет номенклатуры | ПФ |
+      | 058 | Изменение ранее утверждённой техкарты невозможно | ПФ |
+      | 059 | Изменение типа техкарты невозможно | ПФ |
+      | 060 | Невозможно использовать неуникальный артикул номенклатуры | сырьё |
+      | 088 | Не указан вес 1 единицы измерения | сырьё |
+    tags:
+      - НСИ
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/nomenclatureRequest'
+          examples:
+            rawMaterial:
+              summary: Сырьё (RAW_MATERIAL)
+              description: Создание/обновление номенклатуры сырья в штуках с указанием веса 1 шт. и КБЖУ.
+              value:
+                product:
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  type: RAW_MATERIAL
+                  code: С-000123
+                  name: Яйцо куриное С1
+                  isInactive: false
+                  unit: PCE
+                  parent:
+                    id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                    name: Яйца и яйцепродукты
+                  rawMaterialSpecification:
+                    isMercury: true
+                    origin: ANIMAL
+                    weightOfUnit:
+                      numerator: "55"
+                      denominator: "1"
+                      unit: GRM
+                    nutritionalValue:
+                      proteins: "12.7"
+                      fats: "11.5"
+                      carbohydrates: "0.7"
+                    expireControl: true
+                    generalProductionCosts: false
+            semifinished:
+              summary: Полуфабрикат (SEMIFINISHED)
+              description: Создание/обновление упакованного ПФ в кг с обязательным лабораторным контролем.
+              value:
+                product:
+                  id: 9b2e4c1a-6f3d-4a8e-b0c2-1d5f7e9a3b64
+                  type: SEMIFINISHED
+                  code: ПФ-000045
+                  name: Фарш куриный
+                  isInactive: false
+                  unit: KGM
+                  parent:
+                    id: 2d8f6a1c-4b3e-4f9a-8c7d-6e5b4a3f2c10
+                    name: Полуфабрикаты мясные
+                  barcode: "4601234567893"
+                  semifinishedSpecification:
+                    isMercury: true
+                    isPacked: true
+                    bestBefore:
+                      count: 48
+                      unit: HUR
+                    labControl: true
+                    labQuantum: "50"
+                    isCut: false
+                    priority: 3
+            outputProduct:
+              summary: Готовая продукция (OUTPUT_PRODUCT)
+              description: Создание/обновление ГП в штуках с весом 1 шт. в кг.
+              value:
+                product:
+                  id: 5e1a7c3b-8d2f-4e6a-9b0c-3f4d5e6a7b8c
+                  type: OUTPUT_PRODUCT
+                  code: ГП-001234
+                  name: Салат «Цезарь» с курицей 250 г
+                  isInactive: false
+                  unit: PCE
+                  parent:
+                    id: 8a7b6c5d-4e3f-4a2b-9c1d-0e9f8a7b6c5d
+                    name: Салаты
+                  barcode: "4607654321098"
+                  productSpecification:
+                    isMercury: false
+                    isHonestSign: false
+                    bestBefore:
+                      count: 3
+                      unit: DAY
+                    labControl: true
+                    labQuantum: "10"
+                    priority: 2
+                    weightOfUnit:
+                      numerator: "0.250"
+                      denominator: "1"
+                      unit: KGM
+    responses:
+      '200':
+        description: |
+          Результат обработки (успешный или неуспешный).
+          `id` не возвращается, если код ответа 4XX.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '../components/okResponse.yaml'
+                - $ref: '../components/errorResponse.yaml'
+            examples:
+              success:
+                summary: Успешная обработка
+                value:
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  success: true
+                  error: null
+              error:
+                summary: Ошибка бизнес-проверки
+                value:
+                  id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                  success: false
+                  error:
+                    - code: "041"
+                      description: Изменение артикула номенклатуры невозможно
+
+components:
+  schemas:
+    nomenclatureRequest:
+      type: object
+      description: Тело запроса на приём номенклатуры.
+      required:
+        - product
+      properties:
+        product:
+          $ref: '#/components/schemas/product'
+
+    product:
+      description: |
+        Номенклатура сырья / ПФ / ГП. Конкретная схема выбирается по значению `type`.
+      oneOf:
+        - $ref: '#/components/schemas/rawMaterialProduct'
+        - $ref: '#/components/schemas/semifinishedProduct'
+        - $ref: '#/components/schemas/outputProduct'
+      discriminator:
+        propertyName: type
+        mapping:
+          RAW_MATERIAL: '#/components/schemas/rawMaterialProduct'
+          SEMIFINISHED: '#/components/schemas/semifinishedProduct'
+          OUTPUT_PRODUCT: '#/components/schemas/outputProduct'
+
+    productBase:
+      type: object
+      description: Общие атрибуты номенклатуры для всех типов.
+      required:
+        - id
+        - type
+        - code
+        - name
+        - isInactive
+        - unit
+        - parent
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор номенклатуры.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        type:
+          type: string
+          description: |
+            Тип номенклатуры:
+            - `RAW_MATERIAL` — сырьё
+            - `SEMIFINISHED` — ПФ
+            - `OUTPUT_PRODUCT` — ГП
+          enum:
+            - RAW_MATERIAL
+            - SEMIFINISHED
+            - OUTPUT_PRODUCT
+          example: RAW_MATERIAL
+        code:
+          type: string
+          description: Текстовый артикул (код) номенклатуры. Изменение после создания невозможно (ошибка `041`).
+          example: С-000123
+        name:
+          type: string
+          description: Наименование номенклатуры.
+          example: Мука пшеничная высшего сорта
+        isInactive:
+          type: boolean
+          description: |
+            Пометка удаления:
+            - `false` — активно
+            - `true` — удалено
+          example: false
+        unit:
+          type: string
+          description: |
+            Производственная единица измерения, код ОКЕИ. Изменение после создания невозможно (ошибка `040`).
+            - Для `RAW_MATERIAL`: `GRM`, `KGM`, `PCE`, `LTR`, `MTR`
+            - Для `SEMIFINISHED`, `OUTPUT_PRODUCT`: `KGM`, `PCE`
+          enum:
+            - GRM
+            - KGM
+            - PCE
+            - LTR
+            - MTR
+          example: KGM
+        parent:
+          $ref: '#/components/schemas/parent'
+        barcode:
+          type: string
+          description: |
+            Штрих-код номенклатуры, EAN13/GTIN.
+            Обязателен для `SEMIFINISHED` и `OUTPUT_PRODUCT`.
+          example: "4601234567893"
+
+    rawMaterialProduct:
+      description: Номенклатура сырья (`type = RAW_MATERIAL`).
+      allOf:
+        - $ref: '#/components/schemas/productBase'
+        - type: object
+          required:
+            - rawMaterialSpecification
+          properties:
+            type:
+              type: string
+              enum:
+                - RAW_MATERIAL
+            rawMaterialSpecification:
+              $ref: '#/components/schemas/rawMaterialSpecification'
+
+    semifinishedProduct:
+      description: Номенклатура ПФ (`type = SEMIFINISHED`).
+      allOf:
+        - $ref: '#/components/schemas/productBase'
+        - type: object
+          required:
+            - barcode
+            - semifinishedSpecification
+          properties:
+            type:
+              type: string
+              enum:
+                - SEMIFINISHED
+            unit:
+              type: string
+              enum:
+                - KGM
+                - PCE
+            semifinishedSpecification:
+              $ref: '#/components/schemas/semifinishedSpecification'
+
+    outputProduct:
+      description: Номенклатура ГП (`type = OUTPUT_PRODUCT`).
+      allOf:
+        - $ref: '#/components/schemas/productBase'
+        - type: object
+          required:
+            - barcode
+            - productSpecification
+          properties:
+            type:
+              type: string
+              enum:
+                - OUTPUT_PRODUCT
+            unit:
+              type: string
+              enum:
+                - KGM
+                - PCE
+            productSpecification:
+              $ref: '#/components/schemas/productSpecification'
+
+    parent:
+      type: object
+      description: |
+        Родитель / верхний уровень номенклатуры. В зависимости от типа сохраняется в справочник:
+        - сырьё — «Категория сырья»
+        - ПФ, `isPacked = false` — «Группы ПФ»
+        - ПФ, `isPacked = true`, и ГП — «Группа продуктов»
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор родителя.
+          example: 7c9e6679-7425-40de-944b-e07fc1f90ae7
+        name:
+          type: string
+          description: Наименование родителя.
+          example: Мука и крупы
+
+    rawMaterialSpecification:
+      type: object
+      description: Дополнительное описание номенклатуры сырья. Обязательно, если `type = RAW_MATERIAL`.
+      required:
+        - isMercury
+        - origin
+        - expireControl
+        - generalProductionCosts
+      properties:
+        isMercury:
+          type: boolean
+          description: |
+            Подконтрольная Меркурию продукция.
+            Не может быть `true` при `origin = OTHER` (ошибка `047`).
+          example: false
+        origin:
+          type: string
+          description: |
+            Происхождение:
+            - `VEGETABLE` — растительное
+            - `ANIMAL` — животное
+            - `COMBINED` — комбинированное
+            - `OTHER` — другое
+          enum:
+            - VEGETABLE
+            - ANIMAL
+            - COMBINED
+            - OTHER
+          example: VEGETABLE
+        weightOfUnit:
+          allOf:
+            - $ref: '#/components/schemas/weightOfUnit'
+          description: |
+            Вес в единице измерения. Обязательно, если `product.unit` ≠ `KGM`, `GRM`
+            (при `numerator = 0` — ошибка `088`).
+            Единица числителя: `KGM` или `GRM`.
+            Изменение после создания невозможно (ошибка `048`).
+        nutritionalValue:
+          $ref: '#/components/schemas/nutritionalValue'
+        expireControl:
+          type: boolean
+          description: Контролировать срок годности.
+          example: true
+        generalProductionCosts:
+          type: boolean
+          description: |
+            Признак общепроизводственных расходов (ОПР).
+            В АРМ Офис сохраняется инвертированное значение в признак «Используется в техкарте».
+            Изменение после создания невозможно (ошибка `042`).
+          example: false
+
+    nutritionalValue:
+      type: object
+      description: |
+        Пищевая ценность (на 100 г).
+        Обязательна, если `origin` ≠ `OTHER`; не должна передаваться при `origin = OTHER` (ошибка `055`).
+      required:
+        - proteins
+        - fats
+        - carbohydrates
+      properties:
+        proteins:
+          type: string
+          format: numeric
+          description: Белки.
+          example: "10.3"
+        fats:
+          type: string
+          format: numeric
+          description: Жиры.
+          example: "1.1"
+        carbohydrates:
+          type: string
+          format: numeric
+          description: Углеводы.
+          example: "70.6"
+
+    semifinishedSpecification:
+      type: object
+      description: Дополнительное описание номенклатуры ПФ. Обязательно, если `type = SEMIFINISHED`.
+      required:
+        - isMercury
+        - isPacked
+        - bestBefore
+        - labControl
+      properties:
+        isMercury:
+          type: boolean
+          description: Продукция подконтрольна Меркурию.
+          example: true
+        isPacked:
+          type: boolean
+          description: |
+            Признак упаковки и хранения на складе.
+            Определяет справочник для `parent` и допустимый тип техкарты (ошибка `059`).
+          example: false
+        bestBefore:
+          $ref: '#/components/schemas/bestBefore'
+        labControl:
+          type: boolean
+          description: Признак обязательного лабораторного контроля.
+          example: true
+        labResearchBlock:
+          type: boolean
+          deprecated: true
+          description: Признак блокировки до окончания лабораторных исследований. **Удалён из запроса**, не передаётся.
+          example: false
+        labQuantum:
+          type: string
+          format: numeric
+          description: |
+            Квант отбора на лабораторные исследования, в производственных ЕИ.
+            Обязателен, если `labControl = true` (ошибка `045`).
+          example: "50"
+        isCut:
+          type: boolean
+          description: Признак продукта разруба.
+          example: false
+        cutName:
+          type: string
+          description: |
+            Наименование разруба. Если заполнено — номенклатура является продуктом разруба
+            и связывается с техкартой разруба с тем же наименованием.
+            Изменение после создания невозможно (ошибка `050`).
+          example: Разруб тушки цыплёнка-бройлера
+        priority:
+          type: integer
+          format: int32
+          description: |
+            Приоритет номенклатуры.
+            Обязателен для упакованного ПФ, не являющегося продуктом разруба
+            (`isPacked = true` и `cutName` не заполнено) — ошибка `057`.
+          example: 3
+        weightOfUnit:
+          allOf:
+            - $ref: '#/components/schemas/weightOfUnit'
+          description: |
+            Вес в единице измерения. Обязательно, если `product.unit = PCE` (ошибка `051`).
+            Единица числителя — только `KGM` (ошибка `052`).
+            Изменение после создания невозможно (ошибка `048`).
+
+    productSpecification:
+      type: object
+      description: Дополнительное описание номенклатуры ГП. Обязательно, если `type = OUTPUT_PRODUCT`.
+      required:
+        - isMercury
+        - isHonestSign
+        - bestBefore
+        - labControl
+        - priority
+      properties:
+        isMercury:
+          type: boolean
+          description: Продукция подконтрольна Меркурию.
+          example: false
+        isHonestSign:
+          type: boolean
+          description: Продукция подконтрольна Честному знаку.
+          example: false
+        bestBefore:
+          $ref: '#/components/schemas/bestBefore'
+        labControl:
+          type: boolean
+          description: Признак обязательного лабораторного контроля.
+          example: true
+        labResearchBlock:
+          type: boolean
+          deprecated: true
+          description: Признак блокировки до окончания лабораторных исследований. **Удалён из запроса**, не передаётся.
+          example: false
+        labQuantum:
+          type: string
+          format: numeric
+          description: |
+            Квант отбора на лабораторные исследования, в производственных ЕИ.
+            Обязателен, если `labControl = true` (ошибка `045`).
+          example: "10"
+        priority:
+          type: integer
+          format: int32
+          description: Приоритет номенклатуры.
+          example: 2
+        weightOfUnit:
+          allOf:
+            - $ref: '#/components/schemas/weightOfUnit'
+          description: |
+            Вес в единице измерения. Обязательно, если `product.unit = PCE` (ошибка `051`).
+            Единица числителя — только `KGM` (ошибка `052`).
+            Изменение после создания невозможно (ошибка `048`).
+
+    weightOfUnit:
+      type: object
+      description: |
+        Вес в единице измерения, задаётся дробью `numerator / denominator` в единицах `unit`.
+        Для сырья значение «В 1 единице измерения, кг» рассчитывается:
+        - `unit = KGM` — `numerator / denominator`
+        - `unit = GRM` — `(numerator / denominator) / 1000`
+        - `product.unit = GRM` — `0.001`
+        - `product.unit = KGM` — `null`
+      required:
+        - numerator
+        - denominator
+        - unit
+      properties:
+        numerator:
+          type: string
+          format: numeric(6,3)
+          description: Числитель.
+          example: "0.250"
+        denominator:
+          type: string
+          format: numeric(6,3)
+          description: Знаменатель.
+          example: "1"
+        unit:
+          type: string
+          description: |
+            Единица измерения числителя:
+            - `KGM` — кг
+            - `GRM` — г (только для сырья)
+          enum:
+            - KGM
+            - GRM
+          example: KGM
+
+    bestBefore:
+      type: object
+      description: Срок годности.
+      required:
+        - count
+        - unit
+      properties:
+        count:
+          type: integer
+          format: int32
+          description: Срок годности, количество.
+          example: 3
+        unit:
+          type: string
+          description: |
+            Срок годности, единица измерения:
+            - `MIN` — минута
+            - `HUR` — час
+            - `DAY` — день
+            - `MON` — месяц
+          enum:
+            - MIN
+            - HUR
+            - DAY
+            - MON
+          example: DAY
