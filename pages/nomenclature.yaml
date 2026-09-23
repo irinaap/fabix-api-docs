@@ -14,8 +14,6 @@ components:
       $ref: '../components/error.yaml'
     okResponse:
       $ref: '../components/okResponse.yaml'
-   rawNomenclatureRequest: 
-      $ref: '../paths/rawNomenclature.yaml#/components/schemas/rawNomenclatureRequest'   
     product:
       $ref: '../paths/rawNomenclature.yaml#/components/schemas/product'
     category:
