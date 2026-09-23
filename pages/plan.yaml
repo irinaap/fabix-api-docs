@@ -10,7 +10,7 @@ components:
   schemas:
     error:
       $ref: '../components/error.yaml'
-    okResponce:
+    okResponse:
       $ref: '../components/okResponse.yaml'
     workCenter:
       $ref: '../components/workCenter.yaml'
