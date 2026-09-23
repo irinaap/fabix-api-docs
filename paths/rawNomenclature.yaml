@@ -20,10 +20,10 @@ pathItem:
           schema:
             type: object
             required:
-              - rawNomenclature
+              - rawNomenclatureRequest
             properties:
               rawNomenclature:
-                $ref: '#/components/schemas/rawNomenclature'
+                $ref: '#/components/schemas/rawNomenclatureRequest'
     responses:
       '200':
         description: Результат обработки (успешный или неуспешный)
@@ -35,7 +35,7 @@ pathItem:
                 - $ref: '../components/errorResponse.yaml'         
 components:
   schemas:
-    RawNomenclatureRequest:
+    rawNomenclatureRequest:
       type: object
       description: Тело запроса на отправку номенклатуры сырья.
       required:
