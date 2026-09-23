@@ -6,6 +6,8 @@ info:
 paths:
   /api/rawNomenclature:
     $ref: '../paths/rawNomenclature.yaml#/pathItem'
+  /api/productNomenclature:
+    $ref: '../paths/productNomenclature.yaml#/pathItem'    
   /api/labControl:
     $ref: '../paths/labControl.yaml#/pathItem'
   /api/planningResult:
