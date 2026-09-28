@@ -19,8 +19,6 @@ pathItem:
       ## Необязательные атрибуты
       Все атрибуты, описанные в запросе, **передаются всегда**. Если значение необязательного атрибута
       отсутствует, он передаётся со значением `null`.
-      Например, для номенклатуры без категории передаётся `category: null`,
-      для неархивной номенклатуры — `dateDel: null`.
 
       ## Endpoint    
       - endpoint для отправки в ИС Заказчика указан в настройке Номенклатура -> Справочник Номенклатура сырья (в бухгалтерию).     
@@ -51,23 +49,6 @@ pathItem:
                   expireControl: true
                   dateIns: "2026-09-01T09:15:30+03:00"
                   dateUpd: "2026-09-08T15:37:12+03:00"
-                  dateDel: null
-            withoutCategory:
-              summary: Номенклатура сырья без категории
-              description: Необязательный объект `category` не заполнен и передаётся как `null`.
-              value:
-                product:
-                  id: 5d2b7f3a-9c1e-4b8d-a6f0-2e4c6a8b0d13
-                  article: С-000789
-                  name: Соль поваренная пищевая
-                  unit: KGM
-                  isMercury: false
-                  isInActive: false
-                  category: null
-                  origin: Другое
-                  expireControl: false
-                  dateIns: "2026-09-10T12:00:00+03:00"
-                  dateUpd: "2026-09-10T12:00:00+03:00"
                   dateDel: null
             archiving:
               summary: Архивация номенклатуры сырья (кнопка «В архив»)
