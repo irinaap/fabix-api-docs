@@ -104,7 +104,7 @@ pathItem:
                   success: true
                   error: null
               archiveImpossible:
-                summary: Архивация невозможна — есть неархивная товарная номенклатура
+                summary: Архивация невозможна
                 value:
                   id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
                   success: false
