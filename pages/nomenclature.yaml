@@ -24,6 +24,5 @@ components:
       $ref: '../paths/rawNomenclature.yaml#/components/schemas/category'
     productNomenclature:
       $ref: '../paths/productNomenclature.yaml#/components/schemas/productNomenclature'
-    nomenclature:
-      $ref: '../paths/nomenclature.yaml#/components/schemas/nomenclature'
-
+    nomenclatureRequest:
+      $ref: '../paths/nomenclature.yaml#/components/schemas/nomenclatureRequest'
