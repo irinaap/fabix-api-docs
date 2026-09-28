@@ -15,22 +15,11 @@ pathItem:
       | `RAW_MATERIAL`   | Сырьё        | `rawMaterialSpecification`  | Мастер-система по производственной номенклатуре СиМ = Внешняя система |
       | `SEMIFINISHED`   | ПФ           | `semifinishedSpecification` | Мастер-система по номенклатуре ПФ-ГП = Внешняя система |
       | `OUTPUT_PRODUCT` | ГП           | `productSpecification`      | Мастер-система по номенклатуре ПФ-ГП = Внешняя система |
-
-      Значение `MATERIAL` (материалы) упоминается в постановке, но сценарии его приёма в данном описании не рассматриваются.
+      
 
       ---
       Endpoint указан в настройке Номенклатура -> Номенклатура, определён в системе как `[url АРМ Офис]/api/integrations/nomenclature`.
-
-      ### Сценарии приёма
-      | `isInactive` | Запись с `product.id` в АРМ Офис | Сценарий |
-      |--------------|----------------------------------|----------|
-      | `false`      | отсутствует                      | Создание новой номенклатуры (для ПФ/ГП дополнительно создаётся черновик техкарты) |
-      | `false`      | существует                       | Обновление данных номенклатуры |
-      | `true`       | существует                       | Сырьё — перевод в архив; ПФ/ГП — удаление, а если удаление невозможно — перевод в архив |
-      | `true`       | отсутствует                      | Ошибка `001` |
-
-      `parent` обрабатывается как справочник: при отсутствии записи с `parent.id` она добавляется, при расхождении наименования — обновляется.
-      Справочник зависит от типа: сырьё — «Категория сырья»; ПФ (`isPacked = false`) — «Группы ПФ»; ПФ (`isPacked = true`) и ГП — «Группа продуктов».
+   
 
       ### Коды ошибок
       Все бизнес-ошибки возвращаются с HTTP 200 и `success = false`.
@@ -152,9 +141,7 @@ pathItem:
           `id` не возвращается, если код ответа 4XX.
         content:
           application/json:
-            schema:
-              oneOf:
-                - $ref: '../components/okResponse.yaml'
+            schema:            
                 - $ref: '../components/errorResponse.yaml'
             examples:
               success:
@@ -323,10 +310,10 @@ components:
     parent:
       type: object
       description: |
-        Родитель / верхний уровень номенклатуры. В зависимости от типа сохраняется в справочник:
+        Родитель / верхний уровень номенклатуры. В зависимости от типа номенклатуры:
         - сырьё — «Категория сырья»
-        - ПФ, `isPacked = false` — «Группы ПФ»
-        - ПФ, `isPacked = true`, и ГП — «Группа продуктов»
+        - ПФ  — «Группа ПФ»
+        - ГП — «Группа продуктов»
       required:
         - id
         - name
@@ -387,8 +374,7 @@ components:
         generalProductionCosts:
           type: boolean
           description: |
-            Признак общепроизводственных расходов (ОПР).
-            В АРМ Офис сохраняется инвертированное значение в признак «Используется в техкарте».
+            Признак общепроизводственных расходов (ОПР).           
             Изменение после создания невозможно (ошибка `042`).
           example: false
 
@@ -433,21 +419,14 @@ components:
           example: true
         isPacked:
           type: boolean
-          description: |
-            Признак упаковки и хранения на складе.
-            Определяет справочник для `parent` и допустимый тип техкарты (ошибка `059`).
+          description: Признак упаковки и хранения на складе.           
           example: false
         bestBefore:
           $ref: '#/components/schemas/bestBefore'
         labControl:
           type: boolean
           description: Признак обязательного лабораторного контроля.
-          example: true
-        labResearchBlock:
-          type: boolean
-          deprecated: true
-          description: Признак блокировки до окончания лабораторных исследований. **Удалён из запроса**, не передаётся.
-          example: false
+          example: true      
         labQuantum:
           type: string
           format: numeric
@@ -505,12 +484,7 @@ components:
         labControl:
           type: boolean
           description: Признак обязательного лабораторного контроля.
-          example: true
-        labResearchBlock:
-          type: boolean
-          deprecated: true
-          description: Признак блокировки до окончания лабораторных исследований. **Удалён из запроса**, не передаётся.
-          example: false
+          example: true      
         labQuantum:
           type: string
           format: numeric
