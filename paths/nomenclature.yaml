@@ -15,7 +15,13 @@ pathItem:
       | `RAW_MATERIAL`   | Сырьё        | `rawMaterialSpecification`  | Мастер-система по производственной номенклатуре СиМ = Внешняя система |
       | `SEMIFINISHED`   | ПФ           | `semifinishedSpecification` | Мастер-система по номенклатуре ПФ-ГП = Внешняя система |
       | `OUTPUT_PRODUCT` | ГП           | `productSpecification`      | Мастер-система по номенклатуре ПФ-ГП = Внешняя система |
-      
+
+      ### Необязательные атрибуты
+      Все атрибуты, описанные в запросе, **передаются всегда**. Если значение необязательного атрибута
+      отсутствует или атрибут не применим к данному типу номенклатуры, он передаётся со значением `null`.
+      Например, для `type = RAW_MATERIAL` передаются `barcode: null`, `semifinishedSpecification: null`,
+      `productSpecification: null`.
+
 
       ---
       Endpoint указан в настройке Номенклатура -> Номенклатура, определён в системе как `[url АРМ Офис]/api/integrations/nomenclature`.
@@ -68,6 +74,7 @@ pathItem:
                   parent:
                     id: 7c9e6679-7425-40de-944b-e07fc1f90ae7
                     name: Яйца и яйцепродукты
+                  barcode: null
                   rawMaterialSpecification:
                     isMercury: true
                     origin: ANIMAL
@@ -81,6 +88,8 @@ pathItem:
                       carbohydrates: "0.7"
                     expireControl: true
                     generalProductionCosts: false
+                  semifinishedSpecification: null
+                  productSpecification: null
             semifinished:
               summary: Полуфабрикат (SEMIFINISHED)
               description: Создание/обновление упакованного ПФ в кг с обязательным лабораторным контролем.
@@ -96,6 +105,7 @@ pathItem:
                     id: 2d8f6a1c-4b3e-4f9a-8c7d-6e5b4a3f2c10
                     name: Полуфабрикаты мясные
                   barcode: "4601234567893"
+                  rawMaterialSpecification: null
                   semifinishedSpecification:
                     isMercury: true
                     isPacked: true
@@ -105,7 +115,10 @@ pathItem:
                     labControl: true
                     labQuantum: "50"
                     isCut: false
+                    cutName: null
                     priority: 3
+                    weightOfUnit: null
+                  productSpecification: null
             outputProduct:
               summary: Готовая продукция (OUTPUT_PRODUCT)
               description: Создание/обновление ГП в штуках с весом 1 шт. в кг.
@@ -121,6 +134,8 @@ pathItem:
                     id: 8a7b6c5d-4e3f-4a2b-9c1d-0e9f8a7b6c5d
                     name: Салаты
                   barcode: "4607654321098"
+                  rawMaterialSpecification: null
+                  semifinishedSpecification: null
                   productSpecification:
                     isMercury: false
                     isHonestSign: false
@@ -141,8 +156,8 @@ pathItem:
           `id` не возвращается, если код ответа 4XX.
         content:
           application/json:
-            schema:            
-                - $ref: '../components/errorResponse.yaml'
+            schema:
+              $ref: '../components/errorResponse.yaml'
             examples:
               success:
                 summary: Успешная обработка
@@ -195,6 +210,10 @@ components:
         - isInactive
         - unit
         - parent
+        - barcode
+        - rawMaterialSpecification
+        - semifinishedSpecification
+        - productSpecification
       properties:
         id:
           type: string
@@ -245,18 +264,38 @@ components:
           $ref: '#/components/schemas/parent'
         barcode:
           type: string
+          nullable: true
           description: |
             Штрих-код номенклатуры, EAN13/GTIN.
             Обязателен для `SEMIFINISHED` и `OUTPUT_PRODUCT`.
+            Для `RAW_MATERIAL` необязателен: при отсутствии значения передаётся `null`.
           example: "4601234567893"
+        rawMaterialSpecification:
+          allOf:
+            - $ref: '#/components/schemas/rawMaterialSpecification'
+          description: |
+            Дополнительное описание номенклатуры сырья.
+            Заполняется, если `type = RAW_MATERIAL`, иначе передаётся `null`.
+        semifinishedSpecification:
+          allOf:
+            - $ref: '#/components/schemas/semifinishedSpecification'
+          description: |
+            Дополнительное описание номенклатуры ПФ.
+            Заполняется, если `type = SEMIFINISHED`, иначе передаётся `null`.
+        productSpecification:
+          allOf:
+            - $ref: '#/components/schemas/productSpecification'
+          description: |
+            Дополнительное описание номенклатуры ГП.
+            Заполняется, если `type = OUTPUT_PRODUCT`, иначе передаётся `null`.
 
     rawMaterialProduct:
-      description: Номенклатура сырья (`type = RAW_MATERIAL`).
+      description: |
+        Номенклатура сырья (`type = RAW_MATERIAL`).
+        `rawMaterialSpecification` заполнена; `semifinishedSpecification` и `productSpecification` = `null`.
       allOf:
         - $ref: '#/components/schemas/productBase'
         - type: object
-          required:
-            - rawMaterialSpecification
           properties:
             type:
               type: string
@@ -266,13 +305,12 @@ components:
               $ref: '#/components/schemas/rawMaterialSpecification'
 
     semifinishedProduct:
-      description: Номенклатура ПФ (`type = SEMIFINISHED`).
+      description: |
+        Номенклатура ПФ (`type = SEMIFINISHED`).
+        `barcode` и `semifinishedSpecification` заполнены; `rawMaterialSpecification` и `productSpecification` = `null`.
       allOf:
         - $ref: '#/components/schemas/productBase'
         - type: object
-          required:
-            - barcode
-            - semifinishedSpecification
           properties:
             type:
               type: string
@@ -283,17 +321,19 @@ components:
               enum:
                 - KGM
                 - PCE
+            barcode:
+              type: string
+              description: Штрих-код номенклатуры, EAN13/GTIN. Обязателен для ПФ.
             semifinishedSpecification:
               $ref: '#/components/schemas/semifinishedSpecification'
 
     outputProduct:
-      description: Номенклатура ГП (`type = OUTPUT_PRODUCT`).
+      description: |
+        Номенклатура ГП (`type = OUTPUT_PRODUCT`).
+        `barcode` и `productSpecification` заполнены; `rawMaterialSpecification` и `semifinishedSpecification` = `null`.
       allOf:
         - $ref: '#/components/schemas/productBase'
         - type: object
-          required:
-            - barcode
-            - productSpecification
           properties:
             type:
               type: string
@@ -304,6 +344,9 @@ components:
               enum:
                 - KGM
                 - PCE
+            barcode:
+              type: string
+              description: Штрих-код номенклатуры, EAN13/GTIN. Обязателен для ГП.
             productSpecification:
               $ref: '#/components/schemas/productSpecification'
 
@@ -330,10 +373,13 @@ components:
 
     rawMaterialSpecification:
       type: object
-      description: Дополнительное описание номенклатуры сырья. Обязательно, если `type = RAW_MATERIAL`.
+      nullable: true
+      description: Дополнительное описание номенклатуры сырья. Заполняется, если `type = RAW_MATERIAL`, иначе передаётся `null`.
       required:
         - isMercury
         - origin
+        - weightOfUnit
+        - nutritionalValue
         - expireControl
         - generalProductionCosts
       properties:
@@ -363,10 +409,15 @@ components:
           description: |
             Вес в единице измерения. Обязательно, если `product.unit` ≠ `KGM`, `GRM`
             (при `numerator = 0` — ошибка `088`).
+            Если `product.unit` = `KGM` или `GRM` — передаётся `null`.
             Единица числителя: `KGM` или `GRM`.
             Изменение после создания невозможно (ошибка `048`).
         nutritionalValue:
-          $ref: '#/components/schemas/nutritionalValue'
+          allOf:
+            - $ref: '#/components/schemas/nutritionalValue'
+          description: |
+            Пищевая ценность. Обязательна, если `origin` ≠ `OTHER`.
+            При `origin = OTHER` передаётся `null` (иначе — ошибка `055`).
         expireControl:
           type: boolean
           description: Контролировать срок годности.
@@ -380,9 +431,10 @@ components:
 
     nutritionalValue:
       type: object
+      nullable: true
       description: |
         Пищевая ценность (на 100 г).
-        Обязательна, если `origin` ≠ `OTHER`; не должна передаваться при `origin = OTHER` (ошибка `055`).
+        Обязательна, если `origin` ≠ `OTHER`; при `origin = OTHER` передаётся `null` (ошибка `055`).
       required:
         - proteins
         - fats
@@ -406,12 +458,18 @@ components:
 
     semifinishedSpecification:
       type: object
-      description: Дополнительное описание номенклатуры ПФ. Обязательно, если `type = SEMIFINISHED`.
+      nullable: true
+      description: Дополнительное описание номенклатуры ПФ. Заполняется, если `type = SEMIFINISHED`, иначе передаётся `null`.
       required:
         - isMercury
         - isPacked
         - bestBefore
         - labControl
+        - labQuantum
+        - isCut
+        - cutName
+        - priority
+        - weightOfUnit
       properties:
         isMercury:
           type: boolean
@@ -432,17 +490,21 @@ components:
           format: numeric
           description: |
             Квант отбора на лабораторные исследования, в производственных ЕИ.
-            Обязателен, если `labControl = true` (ошибка `045`).
+            Обязателен, если `labControl = true` (ошибка `045`). При отсутствии значения передаётся `null`.
+          nullable: true
           example: "50"
         isCut:
           type: boolean
-          description: Признак продукта разруба.
+          nullable: true
+          description: Признак продукта разруба. При отсутствии значения передаётся `null`.
           example: false
         cutName:
           type: string
+          nullable: true
           description: |
             Наименование разруба. Если заполнено — номенклатура является продуктом разруба
             и связывается с техкартой разруба с тем же наименованием.
+            Если номенклатура не является продуктом разруба — передаётся `null`.
             Изменение после создания невозможно (ошибка `050`).
           example: Разруб тушки цыплёнка-бройлера
         priority:
@@ -451,25 +513,31 @@ components:
           description: |
             Приоритет номенклатуры.
             Обязателен для упакованного ПФ, не являющегося продуктом разруба
-            (`isPacked = true` и `cutName` не заполнено) — ошибка `057`.
+            (`isPacked = true` и `cutName = null`) — ошибка `057`.
+            В остальных случаях необязателен: при отсутствии значения передаётся `null`.
+          nullable: true
           example: 3
         weightOfUnit:
           allOf:
             - $ref: '#/components/schemas/weightOfUnit'
           description: |
             Вес в единице измерения. Обязательно, если `product.unit = PCE` (ошибка `051`).
+            Если `product.unit = KGM` — передаётся `null`.
             Единица числителя — только `KGM` (ошибка `052`).
             Изменение после создания невозможно (ошибка `048`).
 
     productSpecification:
       type: object
-      description: Дополнительное описание номенклатуры ГП. Обязательно, если `type = OUTPUT_PRODUCT`.
+      nullable: true
+      description: Дополнительное описание номенклатуры ГП. Заполняется, если `type = OUTPUT_PRODUCT`, иначе передаётся `null`.
       required:
         - isMercury
         - isHonestSign
         - bestBefore
         - labControl
+        - labQuantum
         - priority
+        - weightOfUnit
       properties:
         isMercury:
           type: boolean
@@ -490,7 +558,8 @@ components:
           format: numeric
           description: |
             Квант отбора на лабораторные исследования, в производственных ЕИ.
-            Обязателен, если `labControl = true` (ошибка `045`).
+            Обязателен, если `labControl = true` (ошибка `045`). При отсутствии значения передаётся `null`.
+          nullable: true
           example: "10"
         priority:
           type: integer
@@ -502,13 +571,16 @@ components:
             - $ref: '#/components/schemas/weightOfUnit'
           description: |
             Вес в единице измерения. Обязательно, если `product.unit = PCE` (ошибка `051`).
+            Если `product.unit = KGM` — передаётся `null`.
             Единица числителя — только `KGM` (ошибка `052`).
             Изменение после создания невозможно (ошибка `048`).
 
     weightOfUnit:
       type: object
+      nullable: true
       description: |
         Вес в единице измерения, задаётся дробью `numerator / denominator` в единицах `unit`.
+        Если вес не требуется (ЕИ = `KGM`, для сырья также `GRM`) — передаётся `null`.
         Для сырья значение «В 1 единице измерения, кг» рассчитывается:
         - `unit = KGM` — `numerator / denominator`
         - `unit = GRM` — `(numerator / denominator) / 1000`
