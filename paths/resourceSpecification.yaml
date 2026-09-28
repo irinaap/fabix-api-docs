@@ -1,0 +1,348 @@
+pathItem:
+  post:
+    summary: Отправка ресурсной спецификации (состав техкарт и выпускаемые продукты)
+    x-source: "АРМ Офис"
+    x-recipient: "ИС Заказчика (бухгалтерия)"
+    description: |
+      Передача из офиса/цеха в ИС Заказчика информации о составах техкарт и выпускаемых продуктах.
+
+      ### Инициация обмена
+      Обмен стартует после отправки всех сообщений **Номенклатура ПФ-ГП** (в бухгалтерию)
+      для всех номенклатур, являющихся выходом из техкарты.
+
+      | Попередельный учёт | Мастер-система по номенклатуре ПФ/ГП | Что отправляется | Момент отправки |
+      |--------------------|--------------------------------------|------------------|-----------------|
+      | Да  | Внешняя система | Все ГП и все ПФ | Кнопка **Утвердить / Повторить отправку** в карточке Техкарты в АРМ Офис |
+      | Да  | ISF             | Все ГП и все ПФ | Кнопка **Утвердить / Повторить отправку** в карточке Техкарты в АРМ Офис после отправки сообщений Номенклатура ПФ-ГП |
+      | Нет | Внешняя система | Только ГП и ПФ-наработки, состав развёрнут до СиМ и ПФ-наработок | Кнопка **Утвердить / Повторить отправку** в карточке Техкарты ГП или ПФ-наработки в АРМ Офис |
+      | Нет | ISF             | Только ГП и ПФ-наработки, состав развёрнут до СиМ и ПФ-наработок | Кнопка **Утвердить / Повторить отправку** в карточке Техкарты ГП или ПФ-наработки в АРМ Офис после отправки сообщений Номенклатура ПФ-ГП |
+
+      ### Формирование состава техкарты
+
+      #### Попередельный учёт = Да
+      - В `composition[]` размещаются все записи Состава техкарты, где Приоритет = 1.
+      - В `analogs[]` размещаются все записи Состава техкарты, где Приоритет > 1.
+
+      #### Попередельный учёт = Нет
+      - `analogs[]` не заполняется.
+      - В `composition[]` размещаются записи Состава техкарты с Приоритет = 1, где Тип номенклатуры = СиМ
+        или (Тип номенклатуры = ГП-ПФ и Номенклатура → Базовая техкарта → Тип рецептуры = `PREPPING`, `PACKAGING`).
+      - Записи с Приоритет = 1, где Тип номенклатуры = ГП-ПФ и Тип рецептуры базовой техкарты = `COOKING`, `CUTTING`,
+        **развёртываются** до СиМ / ПФ-наработок. Потребность определяется на весь выход техкарты, а не на единицу продукта.
+
+      **Алгоритм развёртывания**
+      1. Количество родителя = Потребность из состава, где
+         Потребность из состава = Состав → Количество (если не `null`), иначе Состав → Брутто.
+      2. Если запись Состава — сырьё / ГП / ПФ-наработка (ГП-ПФ с Типом рецептуры базовой техкарты `PREPPING`, `PACKAGING`),
+         расчёт останавливается: Количество = Количество родителя.
+      3. Если запись Состава — ПФ с Типом рецептуры базовой техкарты `COOKING`, `CUTTING`, берутся ингредиенты
+         из его Состава с Приоритет = 1 и рассчитывается
+         Расход = Количество родителя × Потребность из состава / Номенклатура ПФ → Выход
+         (Номенклатура ПФ — та, чей Состав раскручивается).
+         - ингредиент — сырьё / ГП / ПФ-наработка: расчёт останавливается, Количество = Расход;
+         - ингредиент — ПФ: повторяется п. 3, Количество родителя = Расход.
+      4. Найденные ингредиенты группируются по id номенклатуры сырья / ГП-ПФ: Расход = ∑ Количество в группе.
+
+      ### Пищевая ценность выпускаемых продуктов
+      Блок `products[].nutritionalValue` (белки, жиры, углеводы, кКал, кДж) запланирован, **пока не реализуется**
+      и в запросе не передаётся.
+
+      ---
+      Endpoint указан в настройке Номенклатура -> Ресурсная спецификация (в бухгалтерию).
+
+      ### Коды ошибок
+      Коды бизнес-ошибок определяются ИС Заказчика и возвращаются с HTTP 200 и `success = false`.
+    tags:
+      - НСИ. Ресурсная спецификация
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/resourceSpecificationRequest'
+          examples:
+            cooking:
+              summary: Приготовление (COOKING), попередельный учёт = Да
+              description: Техкарта ПФ с сырьём и ПФ в составе, у одного ингредиента есть аналог.
+              value:
+                techCard:
+                  id: 1b4e28ba-2fa1-4d3b-a3f5-ef19b5a7633b
+                  type: COOKING
+                  recipeNo: Р-000001
+                  version: 3
+                  workCenter:
+                    id: e5f6a7b8-c9d0-4123-8ef1-567890123456
+                    name: Горячий цех
+                  products:
+                    - productId: 9b2e4c1a-6f3d-4a8e-b0c2-1d5f7e9a3b64
+                      output: "10.000"
+                      measureUnit: KGM
+                  composition:
+                    - productId: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                      productType: RAW_MATERIAL
+                      count: "8.500"
+                      measureUnit: KGM
+                      analogs:
+                        - productId: 4a1b2c3d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+                          productType: RAW_MATERIAL
+                          count: "8.700"
+                          measureUnit: KGM
+                          priority: 2
+                    - productId: 6c7d8e9f-0a1b-4c2d-9e3f-4a5b6c7d8e9f
+                      productType: OUTPUT_PRODUCT
+                      count: "2.000"
+                      measureUnit: KGM
+                      analogs: []
+            cutting:
+              summary: Разруб (CUTTING) — несколько выпускаемых продуктов
+              value:
+                techCard:
+                  id: 2c5f39cb-3ab2-4e4c-b4a6-f02ac6b8744c
+                  type: CUTTING
+                  recipeNo: Р-000017
+                  version: 1
+                  workCenter:
+                    id: 7d8e9f0a-1b2c-4d3e-8f4a-5b6c7d8e9f0a
+                    name: Цех разделки
+                  products:
+                    - productId: 8e9f0a1b-2c3d-4e4f-9a5b-6c7d8e9f0a1b
+                      output: "4.200"
+                      measureUnit: KGM
+                    - productId: 9f0a1b2c-3d4e-4f5a-8b6c-7d8e9f0a1b2c
+                      output: "3.100"
+                      measureUnit: KGM
+                  composition:
+                    - productId: 0a1b2c3d-4e5f-4a6b-9c7d-8e9f0a1b2c3d
+                      productType: RAW_MATERIAL
+                      count: "10.000"
+                      measureUnit: KGM
+                      analogs: []
+    responses:
+      '200':
+        description: |
+          Результат обработки (успешный или неуспешный).
+          `id` не возвращается, если код ответа 4XX.
+        content:
+          application/json:
+            schema:
+              $ref: '../components/errorResponse.yaml'
+            examples:
+              success:
+                summary: Успешная обработка
+                value:
+                  id: 1b4e28ba-2fa1-4d3b-a3f5-ef19b5a7633b
+                  success: true
+                  error: null
+              error:
+                summary: Ошибка бизнес-проверки
+                value:
+                  id: 1b4e28ba-2fa1-4d3b-a3f5-ef19b5a7633b
+                  success: false
+                  error:
+                    - code: "001"
+                      description: Описание ошибки на стороне ИС Заказчика
+
+components:
+  schemas:
+    resourceSpecificationRequest:
+      type: object
+      description: Тело запроса ресурсной спецификации.
+      required:
+        - techCard
+      properties:
+        techCard:
+          $ref: '#/components/schemas/techCard'
+
+    techCard:
+      type: object
+      description: Технологическая карта.
+      x-source-entity: "Техкарта (public.tech_cards)"
+      required:
+        - id
+        - type
+        - recipeNo
+        - workCenter
+        - products
+        - composition
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор технологической карты.
+          x-source-entity: "Техкарта (public.tech_cards)"
+          x-source-attribute: "Идентификатор техкарты"
+          example: 1b4e28ba-2fa1-4d3b-a3f5-ef19b5a7633b
+        type:
+          type: string
+          description: |
+            Тип спецификации:
+            - `COOKING` — приготовление (включает техкарты с Типом рецептуры `COOKING`, `PREPPING`)
+            - `PACKAGING` — упаковка
+            - `CUTTING` — разруб
+          x-source-entity: "Техкарта (public.tech_cards)"
+          x-source-attribute: "Тип рецептуры"
+          enum:
+            - COOKING
+            - PACKAGING
+            - CUTTING
+          example: COOKING
+        recipeNo:
+          type: string
+          description: № рецептуры.
+          x-source-entity: "Техкарта (public.tech_cards)"
+          x-source-attribute: "№ рецептуры"
+          example: Р-000001
+        version:
+          type: integer
+          format: int32
+          nullable: true
+          description: Версия техкарты. При отсутствии значения передаётся `null`.
+          x-source-entity: "Техкарта (public.tech_cards)"
+          x-source-attribute: "Версия"
+          example: 3
+        workCenter:
+          allOf:
+            - $ref: '../components/workCenter.yaml'
+          description: |
+            Рабочий центр — производитель.
+            - `id` — Техкарта (public.tech_cards) → Идентификатор рабочего центра
+            - `name` — Техкарта → РЦ (public.tech_cards → public.work_centers) → Наименование рабочего центра
+        products:
+          type: array
+          minItems: 1
+          description: |
+            Выпускаемые продукты. Возможно более одного продукта в случае разруба.
+          x-source-entity: "Техкарта → Базовая техкарта → Выпускаемый продукт (Номенклатура ГП-ПФ) (public.tech_cards → public.tech_card_bases → public.tech_card_manufactured_products)"
+          items:
+            $ref: '#/components/schemas/techCardProduct'
+        composition:
+          type: array
+          minItems: 1
+          description: |
+            Состав техкарты (записи с Приоритет = 1). Правила формирования — см. описание метода,
+            раздел «Формирование состава техкарты».
+          x-source-entity: "Техкарта → Группы состава в техкартах → Состав техкарты, где Приоритет = 1 (public.tech_cards → public.tech_card_composition_groups → public.tech_card_compositions)"
+          items:
+            $ref: '#/components/schemas/compositionItem'
+
+    techCardProduct:
+      type: object
+      description: Выпускаемый продукт техкарты.
+      required:
+        - productId
+        - output
+        - measureUnit
+      properties:
+        productId:
+          type: string
+          format: uuid
+          description: Идентификатор номенклатуры выпускаемого продукта (ГП-ПФ).
+          x-source-entity: "Выпускаемый продукт (Номенклатура ГП-ПФ)"
+          x-source-attribute: "Идентификатор номенклатуры выпускаемого продукта (ГП-ПФ)"
+          example: 9b2e4c1a-6f3d-4a8e-b0c2-1d5f7e9a3b64
+        output:
+          type: string
+          format: numeric
+          description: Выход.
+          x-source-entity: "Техкарта (public.tech_cards)"
+          x-source-attribute: "Выход"
+          example: "10.000"
+        measureUnit:
+          type: string
+          description: |
+            ЕИ выхода, код ОКЕИ:
+            - `KGM` — кг
+            - `PCE` — шт
+          x-source-entity: "Выпускаемый продукт (Номенклатура ГП-ПФ)"
+          x-source-attribute: "ЕИ выхода"
+          enum:
+            - KGM
+            - PCE
+          example: KGM
+
+    compositionItemBase:
+      type: object
+      description: Общие атрибуты позиции состава и аналога.
+      required:
+        - productId
+        - productType
+        - count
+        - measureUnit
+      properties:
+        productId:
+          type: string
+          format: uuid
+          description: Идентификатор производственной номенклатуры СиМ / номенклатуры ГП-ПФ в составе.
+          x-source-entity: "Состав техкарты (public.tech_card_compositions)"
+          x-source-attribute: "Идентификатор производственной номенклатуры СиМ / номенклатуры ГП-ПФ в составе"
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        productType:
+          type: string
+          description: |
+            Тип номенклатуры:
+            - `RAW_MATERIAL` — сырьё
+            - `OUTPUT_PRODUCT` — полуфабрикаты и ГП
+          enum:
+            - RAW_MATERIAL
+            - OUTPUT_PRODUCT
+          example: RAW_MATERIAL
+        count:
+          type: string
+          format: numeric
+          description: |
+            Количество номенклатуры в составе в производственных ЕИ.
+            При Попередельный учёт = Нет — рассчитанный Расход по алгоритму развёртывания.
+          x-source-entity: "Состав техкарты (public.tech_card_compositions)"
+          x-source-attribute: "Правило определения значения"
+          example: "8.500"
+        measureUnit:
+          type: string
+          description: |
+            ЕИ номенклатуры в составе, код ОКЕИ: `KGM`, `PCE`, `LTR`, `MTR`, `GRM`.
+            - Для ГП-ПФ: Состав техкарты → Выпускаемый продукт (public.tech_card_compositions → public.tech_card_manufactured_products)
+            - Для СиМ: Состав техкарты → Номенклатура СиМ производственная (public.tech_card_compositions → public.raw_mat_nomenclatures)
+          x-source-attribute: "Единица измерения номенклатуры"
+          enum:
+            - KGM
+            - PCE
+            - LTR
+            - MTR
+            - GRM
+          example: KGM
+
+    compositionItem:
+      description: Позиция состава техкарты (Приоритет = 1).
+      allOf:
+        - $ref: '#/components/schemas/compositionItemBase'
+        - type: object
+          properties:
+            analogs:
+              type: array
+              description: |
+                Аналоги позиции состава (записи Состава техкарты с Приоритет > 1).
+                Заполняется только при Попередельный учёт = Да; иначе передаётся пустой массив.
+              x-source-entity: "Техкарта → Группы состава в техкартах → Состав техкарты, где Приоритет > 1"
+              items:
+                $ref: '#/components/schemas/analog'
+
+    analog:
+      description: Аналог позиции состава.
+      allOf:
+        - $ref: '#/components/schemas/compositionItemBase'
+        - type: object
+          required:
+            - priority
+          properties:
+            count:
+              type: string
+              format: numeric
+              description: Количество номенклатуры аналога в составе в базовых ЕИ номенклатуры.
+              example: "8.700"
+            priority:
+              type: integer
+              format: int32
+              minimum: 2
+              description: Приоритет аналога. Значение > 1.
+              x-source-entity: "Состав техкарты (public.tech_card_compositions)"
+              x-source-attribute: "Приоритет"
+              example: 2
