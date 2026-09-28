@@ -32,8 +32,7 @@ pathItem:
             $ref: '#/components/schemas/rawNomenclatureRequest'
           examples:
             approve:
-              summary: Утверждение номенклатуры сырья
-              description: Все атрибуты заполнены; `dateDel` передаётся как `null`.
+              summary: Утверждение номенклатуры сырья            
               value:
                 product:
                   id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
