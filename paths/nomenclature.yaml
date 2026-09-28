@@ -23,7 +23,7 @@ pathItem:
       `productSpecification: null`.
 
 
-      ---
+      ## Endpoint  
       Endpoint указан в настройке Номенклатура -> Номенклатура, определён в системе как `[url АРМ Офис]/api/integrations/nomenclature`.
    
 
