@@ -7,7 +7,9 @@ paths:
   /api/rawNomenclature:
     $ref: '../paths/rawNomenclature.yaml#/pathItem'
   /api/productNomenclature:
-    $ref: '../paths/productNomenclature.yaml#/pathItem'    
+    $ref: '../paths/productNomenclature.yaml#/pathItem'
+  /api/nomenclature:
+    $ref: '../paths/nomenclature.yaml#/pathItem'  
   /api/labControl:
     $ref: '../paths/labControl.yaml#/pathItem'
   /api/planningResult:
