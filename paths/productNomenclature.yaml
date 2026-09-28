@@ -1,6 +1,6 @@
 pathItem:
   post:
-    summary: Отправка номенклатуры ГП, ПФ (мастер по номенклатуре ПФ/ГП - Fabix)   
+    summary: Отправка номенклатуры ГП, ПФ (мастер по номенклатуре ПФ/ГП - Fabix)
     x-source: "ISF (АРМ Офис)"
     x-recipient:
       - АРМ Склад
@@ -11,16 +11,22 @@ pathItem:
       - Нам-Ням
     description: |
       Справочник номенклатуры ГП, ПФ создаётся и редактируется в АРМ Офис и отправляется в ИС Заказчика.
-      
+
       ## Инициация обмена
       - по нажатию кнопки **Утвердить** / **Повторить отправку** в карточке Техкарты в АРМ Офис;
       - по нажатию кнопки **В архив** в карточке Техкарты в АРМ Офис;
       - по нажатию кнопки **Ок** при индивидуальном/массовом редактировании записей в Реестре номенклатуры ГП-ПФ.
-         
+
       ## Состав выгрузки в ИС Заказчика
       Определяется настройкой конфигурации **Выгрузка номенклатуры ГП и ПФ**:
       - `только ГП` — в ИС Заказчика отправляется только номенклатура ГП;
       - `ПФ и ГП` — в ИС Заказчика отправляется номенклатура ГП и ПФ.
+
+      ## Необязательные атрибуты
+      Все атрибуты, описанные в запросе, **передаются всегда**. Если значение необязательного атрибута
+      отсутствует или атрибут не применим к данному типу номенклатуры, он передаётся со значением `null`.
+      Например, для ПФ (`isFinished = false`) передаются `ownBrand: null`, `productGroup: null`, `dishType: null`;
+      до разработки интеграции с Меркурием передаётся `mercury: null`.
 
       ## Endpoint
       - endpoint для отправки в ИС Заказчика указан в настройке Номенклатура -> Справочник Номенклатура ГП, ПФ (в бухгалтерию).
@@ -35,6 +41,7 @@ pathItem:
           examples:
             finishedProduct:
               summary: Готовая продукция (ГП)
+              description: Утверждение техкарты ГП в штуках. Необязательные атрибуты без значения передаются как `null`.
               value:
                 product:
                   id: 9b2f4c1e-6d3a-4f8b-a1c7-2e5d8f0b3a41
@@ -63,8 +70,12 @@ pathItem:
                   isInActive: false
                   dateIns: "2026-09-01T09:15:30+03:00"
                   dateUpd: "2026-09-08T15:37:12+03:00"
+                  dateDel: null
             semiFinishedProduct:
               summary: Полуфабрикат (ПФ)
+              description: |
+                Утверждение техкарты ПФ в кг. Атрибуты, применимые только к ГП
+                (`ownBrand`, `productGroup`, `dishType`), и атрибуты без значения передаются как `null`.
               value:
                 product:
                   id: 2e7a9c4b-8f1d-4a3e-b6c5-7d0e1f2a3b4c
@@ -72,28 +83,47 @@ pathItem:
                   name: Курица отварная, филе, кубик 10 мм
                   unit: KGM
                   quantumProduction: "25.500"
+                  quantumShipment: null
+                  estimatedMass: null
+                  ownBrand: null
                   shelfLife:
                     count: 48
                     unit: HUR
                   isFinished: false
                   mercury: null
+                  barcode: null
+                  productGroup: null
+                  dishType: null
                   isHonestSign: false
                   isInActive: false
                   dateIns: "2026-08-20T11:02:45+03:00"
                   dateUpd: "2026-09-05T08:40:00+03:00"
+                  dateDel: null
             archiving:
               summary: Архивация номенклатуры (кнопка «В архив»)
+              description: Архивация ГП без СТМ. Заполнена дата удаления `dateDel`.
               value:
                 product:
                   id: 9b2f4c1e-6d3a-4f8b-a1c7-2e5d8f0b3a41
                   article: ГП-000457
                   name: Салат «Оливье» с курицей, 250 г
                   unit: PCE
+                  quantumProduction: "120.000"
+                  quantumShipment: "12.00"
+                  estimatedMass: "0.250"
+                  ownBrand: null
                   shelfLife:
                     count: 72
                     unit: HUR
                   isFinished: true
                   mercury: null
+                  barcode: "4601234567893"
+                  productGroup:
+                    id: 5a1d2e3f-4b5c-4d6e-8f7a-9b0c1d2e3f4a
+                    name: Салаты
+                  dishType:
+                    id: c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e6f
+                    name: Холодные закуски
                   isHonestSign: false
                   isInActive: true
                   dateIns: "2026-09-01T09:15:30+03:00"
@@ -108,7 +138,7 @@ pathItem:
         content:
           application/json:
             schema:
-                - $ref: '../components/errorResponse.yaml'
+              $ref: '../components/errorResponse.yaml'
             examples:
               success:
                 summary: Успешная обработка
@@ -138,16 +168,29 @@ components:
 
     productNomenclature:
       type: object
-      description: Номенклатура готовой продукции (ГП) / полуфабриката (ПФ).
+      description: |
+        Номенклатура готовой продукции (ГП) / полуфабриката (ПФ).
+        Все атрибуты передаются всегда; необязательные атрибуты без значения передаются со значением `null`.
       required:
         - id
         - article
         - name
         - unit
+        - quantumProduction
+        - quantumShipment
+        - estimatedMass
+        - ownBrand
         - shelfLife
         - isFinished
+        - mercury
+        - barcode
+        - productGroup
+        - dishType
         - isHonestSign
         - isInActive
+        - dateIns
+        - dateUpd
+        - dateDel
       properties:
         id:
           type: string
@@ -171,7 +214,7 @@ components:
         unit:
           type: string
           description: |
-            Наименование единицы измерения.  Значение из ОКЕИ
+            Наименование единицы измерения. Значение из ОКЕИ
             (Общероссийский классификатор единиц измерения):
             - `KGM` — килограмм
             - `PCE` — штука
@@ -183,22 +226,31 @@ components:
           # Источник — атрибут: Единица измерения выхода.
         quantumProduction:
           type: string
-          format: numeric(10,3)         
-          description: Квант выпуска. Число в строковом формате, numeric(10,3).
+          format: numeric(10,3)
+          nullable: true
+          description: |
+            Квант выпуска. Число в строковом формате, numeric(10,3).
+            Необязательный: при отсутствии значения передаётся `null`.
           example: "120.000"
           # Источник — сущность: Техкарта номенклатуры ГП.
           # Источник — атрибут: Выход.
         quantumShipment:
           type: string
-          format: numeric(10,2)          
-          description: Квант заказа. Число в строковом формате, numeric(10,2).
+          format: numeric(10,2)
+          nullable: true
+          description: |
+            Квант заказа. Число в строковом формате, numeric(10,2).
+            Необязательный: при отсутствии значения передаётся `null`.
           example: "12.00"
           # Источник — сущность: Техкарта номенклатуры ГП.
           # Источник — атрибут: Квант заказа.
         estimatedMass:
           type: string
-          format: numeric(5,3)          
-          description: Оценочный вес 1 шт., кг. Число в строковом формате, numeric(5,3).
+          format: numeric(5,3)
+          nullable: true
+          description: |
+            Оценочный вес 1 шт., кг. Число в строковом формате, numeric(5,3).
+            Необязательный: при отсутствии значения передаётся `null`.
           example: "0.250"
           # Источник — сущность: Техкарта номенклатуры ГП.
           # Источник — атрибут: Оценочный вес 1 шт., кг.
@@ -219,7 +271,10 @@ components:
           $ref: '#/components/schemas/mercury'
         barcode:
           type: string
-          description: Штрихкод (EAN13, ITF14).
+          nullable: true
+          description: |
+            Штрихкод (EAN13, ITF14).
+            Необязательный: при отсутствии значения передаётся `null`.
           pattern: '^(\d{13}|\d{14})$'
           example: "4601234567893"
           # Источник — сущность: Выпускаемый продукт Техкарты.
@@ -247,30 +302,40 @@ components:
         dateIns:
           type: string
           format: date-time
-          description: Дата создания. Строка в текстовом формате RFC 3339.
+          nullable: true
+          description: |
+            Дата создания. Строка в текстовом формате RFC 3339.
+            Необязательный: при отсутствии значения передаётся `null`.
           example: "2026-09-01T09:15:30+03:00"
           # Источник — сущность: Лог изменений номенклатуры ГП.
           # Источник — атрибут: Дата создания.
         dateUpd:
           type: string
           format: date-time
-          description: Дата последнего изменения. Строка в текстовом формате RFC 3339.
+          nullable: true
+          description: |
+            Дата последнего изменения. Строка в текстовом формате RFC 3339.
+            Необязательный: при отсутствии значения передаётся `null`.
           example: "2026-09-08T15:37:12+03:00"
           # Источник — сущность: Лог изменений номенклатуры ГП.
           # Источник — атрибут: Дата последнего изменения.
         dateDel:
           type: string
           format: date-time
-          description: Дата удаления. Строка в текстовом формате RFC 3339.
+          nullable: true
+          description: |
+            Дата удаления. Строка в текстовом формате RFC 3339.
+            Для неархивной номенклатуры (`isInActive = false`) передаётся `null`.
           example: "2026-09-21T10:05:00+03:00"
           # Источник — сущность: Лог изменений номенклатуры ГП.
           # Источник — атрибут: Дата удаления.
 
     ownBrand:
       type: object
+      nullable: true
       description: |
         Собственная торговая марка (СТМ). Только для ГП — заполняется, только если Тип = ГП.
-        Необязательный объект; если он передан, то `id` и `name` обязательны.
+        Для ПФ или при отсутствии СТМ передаётся `null`; если объект заполнен, то `id` и `name` обязательны.
       # Источник — сущность: Справочник СТМ.
       required:
         - id
@@ -326,16 +391,23 @@ components:
       nullable: true
       description: |
         Сведения о регистрации номенклатуры в Меркурии.
-        Заполняется, только если «Подотчётная Меркурию продукция» = `true`.
+        Заполняется, только если «Подотчётная Меркурию продукция» = `true`, иначе передаётся `null`.
 
-        **Атрибуты объекта `mercury` не заполняются, объект отправляется пустым.**
-        Отправлять данные потребуется после разработки интеграции с Меркурием.
+        **До разработки интеграции с Меркурием объект не заполняется и передаётся со значением `null`.**
+        Если объект заполнен, передаются все его атрибуты; атрибуты без значения — `null`.
       # Источник — сущность: Техкарта номенклатуры ГП.
+      required:
+        - id
+        - packagingType
+        - quantity
+        - volume
+        - unit
       properties:
         id:
           type: string
           format: uuid
-          description: Идентификатор продукции в Меркурии.
+          nullable: true
+          description: Идентификатор продукции в Меркурии. При отсутствии значения передаётся `null`.
           example: 6f1e2d3c-4b5a-4968-8776-5a4b3c2d1e0f
           # Источник — сущность: Номенклатура ГП, Данные из Меркурия.
           # Источник — атрибут: Guid.
@@ -344,15 +416,19 @@ components:
         quantity:
           type: integer
           format: int32
-          description: Количество единиц упаковки.
+          nullable: true
+          description: Количество единиц упаковки. При отсутствии значения передаётся `null`.
           example: 10
           # Источник — сущность: Номенклатура ГП, Данные из Меркурия.
           # Источник — атрибут: Количество единиц упаковки.
         volume:
           type: string
           format: numeric(10,2)
+          nullable: true
           pattern: '^\d{1,8}(\.\d{1,2})?$'
-          description: Объём единицы упаковки товара. Число в строковом формате, numeric(10,2).
+          description: |
+            Объём единицы упаковки товара. Число в строковом формате, numeric(10,2).
+            При отсутствии значения передаётся `null`.
           example: "0.25"
           # Источник — сущность: Номенклатура ГП, Данные из Меркурия.
           # Источник — атрибут: Объём единицы упаковки товара.
@@ -361,43 +437,56 @@ components:
 
     mercuryPackagingType:
       type: object
-      description: Тип упаковки.
+      nullable: true
+      description: Тип упаковки. При отсутствии значения передаётся `null`.
       # Источник — сущность: Справочник Виды упаковки.
+      required:
+        - id
+        - code
       properties:
         id:
           type: string
           format: uuid
-          description: Глобальный идентификатор упаковки.
+          nullable: true
+          description: Глобальный идентификатор упаковки. При отсутствии значения передаётся `null`.
           example: 8a7b6c5d-4e3f-4a1b-9c8d-7e6f5a4b3c2d
           # Источник — атрибут: Guid упаковки.
         code:
           type: string
-          description: Уникальный идентификатор упаковки.
+          nullable: true
+          description: Уникальный идентификатор упаковки. При отсутствии значения передаётся `null`.
           example: BX
           # Источник — атрибут: Код.
 
     mercuryUnit:
       type: object
-      description: Единица измерения объёма единицы упаковки товара.
+      nullable: true
+      description: Единица измерения объёма единицы упаковки товара. При отсутствии значения передаётся `null`.
       # Источник — сущность: Номенклатура ГП, Данные из Меркурия.
+      required:
+        - id
+        - name
       properties:
         id:
           type: string
           format: uuid
-          description: Глобальный идентификатор единицы измерения.
+          nullable: true
+          description: Глобальный идентификатор единицы измерения. При отсутствии значения передаётся `null`.
           example: 1d2c3b4a-5f6e-4d7c-8b9a-0f1e2d3c4b5a
           # Источник — атрибут: Глобальный идентификатор единицы измерения.
         name:
           type: string
-          description: Наименование единицы измерения.
+          nullable: true
+          description: Наименование единицы измерения. При отсутствии значения передаётся `null`.
           example: кг
           # Источник — атрибут: Наименование единицы измерения.
 
     productGroup:
       type: object
+      nullable: true
       description: |
         Группа продуктов. Только для ГП — заполняется, только если Тип = ГП.
-        Необязательный объект; если он передан, то `id` и `name` обязательны.
+        Для ПФ или при отсутствии значения передаётся `null`; если объект заполнен, то `id` и `name` обязательны.
       # Источник — сущность: Техкарта номенклатуры ГП.
       required:
         - id
@@ -417,9 +506,10 @@ components:
 
     dishType:
       type: object
+      nullable: true
       description: |
         Тип блюда. Только для ГП — заполняется, только если Тип = ГП.
-        Необязательный объект; если он передан, то `id` и `name` обязательны.
+        Для ПФ или при отсутствии значения передаётся `null`; если объект заполнен, то `id` и `name` обязательны.
       # Источник — сущность: Техкарта номенклатуры ГП.
       required:
         - id
